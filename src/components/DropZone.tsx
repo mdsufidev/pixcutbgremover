@@ -100,6 +100,15 @@ export const DropZone: React.FC<DropZoneProps> = ({
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#0f1012]">
+      {/* Brand Logo Banner */}
+      <div className="mb-6 flex flex-col items-center">
+        <img
+          src="/logo.png"
+          alt="PixCutBg Desktop"
+          className="h-11 object-contain select-none pointer-events-none"
+        />
+      </div>
+
       <input
         ref={fileInputRef}
         type="file"

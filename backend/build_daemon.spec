@@ -92,5 +92,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None
+    icon=os.path.join(os.path.dirname(__file__), '..', 'resources', 'icons', 'icon.ico') if os.path.exists(os.path.join(os.path.dirname(__file__), '..', 'resources', 'icons', 'icon.ico')) else None
 )

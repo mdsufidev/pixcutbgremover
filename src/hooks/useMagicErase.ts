@@ -12,14 +12,61 @@ export interface MagicEraseOptions {
   feather?: number; // feather edge radius
 }
 
+/**
+ * Universal performMagicErase function supporting both:
+ * 1. performMagicErase(canvas, startX, startY, tolerance, contiguous)
+ * 2. performMagicErase(ctx, width, height, startX, startY, options)
+ */
 export function performMagicErase(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  startX: number,
-  startY: number,
-  options: MagicEraseOptions
+  canvasOrCtx: HTMLCanvasElement | CanvasRenderingContext2D,
+  arg2: number,
+  arg3: number,
+  arg4?: number | MagicEraseOptions,
+  arg5?: number | boolean,
+  arg6?: MagicEraseOptions
 ): ImageData | null {
+  let ctx: CanvasRenderingContext2D | null;
+  let width: number;
+  let height: number;
+  let startX: number;
+  let startY: number;
+  let tolerance = 20;
+  let contiguous = true;
+
+  if (canvasOrCtx instanceof HTMLCanvasElement) {
+    ctx = canvasOrCtx.getContext('2d');
+    width = canvasOrCtx.width;
+    height = canvasOrCtx.height;
+    startX = Math.round(arg2);
+    startY = Math.round(arg3);
+
+    if (typeof arg4 === 'number') {
+      tolerance = arg4;
+    } else if (arg4 && typeof arg4 === 'object') {
+      tolerance = arg4.tolerance ?? 20;
+      contiguous = arg4.contiguous ?? true;
+    }
+
+    if (typeof arg5 === 'boolean') {
+      contiguous = arg5;
+    }
+  } else {
+    ctx = canvasOrCtx;
+    width = Math.round(arg2);
+    height = Math.round(arg3);
+    startX = Math.round(arg4 as number);
+    startY = Math.round(arg5 as number);
+
+    if (arg6 && typeof arg6 === 'object') {
+      tolerance = arg6.tolerance ?? 20;
+      contiguous = arg6.contiguous ?? true;
+    }
+  }
+
+  if (!ctx || width <= 0 || height <= 0) {
+    return null;
+  }
+
   if (startX < 0 || startX >= width || startY < 0 || startY >= height) {
     return null;
   }
@@ -28,25 +75,49 @@ export function performMagicErase(
   const data = imageData.data;
 
   // Target clicked pixel RGBA
-  const targetIdx = (startY * width + startX) * 4;
+  let targetIdx = (startY * width + startX) * 4;
+  let targetA = data[targetIdx + 3];
+
+  // If clicked directly on a transparent pixel, search nearby (radius 2) for closest opaque pixel
+  if (targetA === 0) {
+    let found = false;
+    for (let r = 1; r <= 3 && !found; r++) {
+      for (let dy = -r; dy <= r && !found; dy++) {
+        for (let dx = -r; dx <= r && !found; dx++) {
+          const nx = startX + dx;
+          const ny = startY + dy;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            const idx = (ny * width + nx) * 4;
+            if (data[idx + 3] > 0) {
+              startX = nx;
+              startY = ny;
+              targetIdx = idx;
+              targetA = data[idx + 3];
+              found = true;
+            }
+          }
+        }
+      }
+    }
+    // If still transparent, nothing to erase
+    if (!found) {
+      return null;
+    }
+  }
+
   const targetR = data[targetIdx];
   const targetG = data[targetIdx + 1];
   const targetB = data[targetIdx + 2];
-  const targetA = data[targetIdx + 3];
-
-  // If clicked on fully transparent pixel, nothing to erase
-  if (targetA === 0) {
-    return null;
-  }
 
   // Tolerance: 0 to 100 mapped to color Euclidean distance squared (max is 3 * 255^2 = 195075)
-  // Max distance is ~441.67.
-  const maxColorDist = (options.tolerance / 100) * 441.67;
+  // Max Euclidean distance is ~441.67.
+  const effectiveTol = Math.max(1, tolerance);
+  const maxColorDist = (effectiveTol / 100) * 441.67;
   const maxColorDistSq = maxColorDist * maxColorDist;
 
   const totalPixels = width * height;
 
-  if (!options.contiguous) {
+  if (!contiguous) {
     // GLOBAL COLOR MATCH: Iterate through all pixels and erase matching
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
@@ -68,7 +139,6 @@ export function performMagicErase(
     }
   } else {
     // CONTIGUOUS BFS FLOOD FILL:
-    // Preallocated circular buffer/queue for high performance without GC spikes
     const queue = new Int32Array(totalPixels);
     const visited = new Uint8Array(totalPixels);
     let head = 0;
@@ -85,7 +155,7 @@ export function performMagicErase(
     while (head < tail) {
       const currentPixel = queue[head++];
       const cx = currentPixel % width;
-      const cy = Math.floor(currentPixel / width);
+      const cy = (currentPixel / width) | 0;
       const cIdx = currentPixel * 4;
 
       // Erase this connected matching pixel

@@ -5,6 +5,8 @@ x64:
     - '!release{,/**/*}'
     - dist/**/*
     - dist-electron/**/*
+    - resources/icons/**/*
+    - public/**/*
     - package.json
     - '!**/*.{iml,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,suo,xproj,cc,d.ts,mk,a,o,forge-meta,pdb}'
     - '!**/._*'
@@ -17,6 +19,8 @@ x64:
     - '**/*'
     - dist/**/*
     - dist-electron/**/*
+    - resources/icons/**/*
+    - public/**/*
 nsis:
   script: |-
     !include "D:\My All Projects\PixCut bgremover\node_modules\app-builder-lib\templates\nsis\include\StdUtils.nsh"
@@ -93,8 +97,8 @@ nsis:
     !macroend
 
     !addplugindir /x86-unicode "C:\Users\sufi1\AppData\Local\electron-builder\Cache\nsis\nsis-resources-3.4.1\plugins\x86-unicode"
-    !include "C:\Users\sufi1\AppData\Local\Temp\t-H1FbEA\0-messages.nsh"
-    !include "C:\Users\sufi1\AppData\Local\Temp\t-H1FbEA\1-messages.nsh"
+    !include "C:\Users\sufi1\AppData\Local\Temp\t-RhlozZ\0-messages.nsh"
+    !include "C:\Users\sufi1\AppData\Local\Temp\t-RhlozZ\1-messages.nsh"
 
     Var newStartMenuLink
     Var oldStartMenuLink

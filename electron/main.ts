@@ -7,7 +7,13 @@ let mainWindow: BrowserWindow | null = null;
 const daemon = new DaemonManager();
 
 async function createWindow() {
+  const iconIco = path.join(__dirname, '../resources/icons/icon.ico');
+  const iconPng = path.join(__dirname, '../resources/icons/icon.png');
+  const appIcon = fs.existsSync(iconIco) ? iconIco : (fs.existsSync(iconPng) ? iconPng : undefined);
+
   mainWindow = new BrowserWindow({
+    title: 'PixCutBg Desktop',
+    icon: appIcon,
     width: 1280,
     height: 840,
     minWidth: 1000,

@@ -244,9 +244,10 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     // 3. Magic Erase
     if (currentTool === 'magic-erase') {
-      performMagicErase(canvas, coords.x, coords.y, tolerance, contiguous);
-      const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      onPushHistoryState(snapshot);
+      const result = performMagicErase(canvas, coords.x, coords.y, tolerance, contiguous);
+      if (result) {
+        onPushHistoryState(result);
+      }
       return;
     }
 

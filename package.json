@@ -17,13 +17,15 @@
   },
   "build": {
     "appId": "com.pixcut.desktop",
-    "productName": "PixCut Desktop",
+    "productName": "PixCutBg Desktop",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "resources/icons/**/*",
+      "public/**/*"
     ],
     "extraResources": [
       {
@@ -34,6 +36,7 @@
     ],
     "win": {
       "target": ["nsis"],
+      "icon": "resources/icons/icon.ico",
       "signAndEditExecutable": false
     },
     "nsis": {
@@ -44,7 +47,8 @@
     },
     "linux": {
       "target": ["AppImage", "tar.gz"],
-      "category": "Graphics"
+      "category": "Graphics",
+      "icon": "resources/icons/icon.png"
     }
   },
   "keywords": [

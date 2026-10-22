@@ -1,4 +1,8 @@
-# PixCut Desktop — Native AI Background Remover
+<p align="center">
+  <img src="public/logo.png" width="540" alt="PixCutBg Desktop Logo" />
+</p>
+
+# PixCutBg Desktop — Native AI Background Remover
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-0078D6?style=flat-square&logo=windows" alt="Platform" />
@@ -16,18 +20,18 @@ A production-grade, standalone desktop workstation application for high-performa
 
 ## 🚀 Quick Download & Install (Zero Setup Needed)
 
-Anyone can download and run PixCut Desktop directly on Windows without deploying or setting up servers:
+Anyone can download and run PixCutBg Desktop directly on Windows without deploying or setting up servers:
 
 | Package Type | File Name | Size | Instructions |
 | :--- | :--- | :--- | :--- |
-| **⭐ Windows 1-Click Installer (.exe)** | [**`PixCut Desktop Setup 1.0.0.exe`**](release/PixCut%20Desktop%20Setup%201.0.0.exe) | ~291 MB | **Recommended**: Download and double-click to install. It installs all dependencies cleanly and creates a Desktop shortcut. |
-| **📦 Windows Portable Archive (.zip)** | [**`PixCut-Desktop-Portable-x64.zip`**](release/PixCut-Desktop-Portable-x64.zip) | ~331 MB | Download, **Right-click → Extract All**, then run `PixCut Desktop.exe`. No installation required. |
-| **⚡ Standalone AI Daemon (.exe)** | [**`pixcut-ai-daemon.exe`**](resources/backend-dist/pixcut-ai-daemon.exe) | ~213 MB | Single-file embedded Python FastAPI + rembg + ONNX Runtime executable with auto-fallback to CPU/CUDA. |
+| **⭐ Windows 1-Click Installer (.exe)** | [**`PixCutBg Desktop Setup 1.0.0.exe`**](release/PixCutBg%20Desktop%20Setup%201.0.0.exe) | ~368 MB | **Recommended**: Download and double-click to install. It installs all dependencies cleanly and creates a Desktop shortcut with official icons. |
+| **📦 Windows Portable Archive (.zip)** | [**`PixCutBg-Desktop-Portable-x64.zip`**](release/PixCutBg-Desktop-Portable-x64.zip) | ~405 MB | Download, **Right-click → Extract All**, then run `PixCutBg Desktop.exe`. No installation required. |
+| **⚡ Standalone AI Daemon (.exe)** | [**`pixcut-ai-daemon.exe`**](resources/backend-dist/pixcut-ai-daemon.exe) | ~293 MB | Single-file embedded Python FastAPI + DirectML GPU + rembg + ONNX Runtime executable with auto-fallback to CPU/CUDA. |
 
 > [!IMPORTANT]
 > **Important Note regarding `ffmpeg.dll` or `python314.dll` missing errors**:
-> If you run `PixCut Desktop.exe` directly from inside a `.zip` preview or download only a single `.exe` file without extracting its sibling DLLs, Windows will show a `missing ffmpeg.dll` error.
-> **Solution**: Always use the **1-Click Setup Installer (`PixCut Desktop Setup 1.0.0.exe`)** which automatically extracts everything to your PC, or **Extract All** from the Portable `.zip` before launching.
+> If you run `PixCutBg Desktop.exe` directly from inside a `.zip` preview without extracting its sibling DLLs, Windows will show a missing DLL error.
+> **Solution**: Always use the **1-Click Setup Installer (`PixCutBg Desktop Setup 1.0.0.exe`)** which automatically extracts everything to your PC, or **Extract All** from the Portable `.zip` before launching.
 
 ---
 

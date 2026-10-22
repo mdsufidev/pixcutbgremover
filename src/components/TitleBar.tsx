@@ -39,12 +39,11 @@ export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy 
       {/* Left: Branding & Status */}
       <div className="flex items-center gap-3 app-no-drag">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-[#27272a] flex items-center justify-center text-zinc-200">
-            <Scissors className="w-2.5 h-2.5" />
-          </div>
-          <span className="text-xs font-medium text-zinc-200 tracking-tight">
-            PixCut Desktop
-          </span>
+          <img
+            src="/logo.png"
+            alt="PixCutBg Desktop"
+            className="h-5 object-contain"
+          />
           <span className="text-[10px] px-1 py-0.2 rounded border border-[#27272a] text-zinc-500 font-mono">
             v1.0.0
           </span>

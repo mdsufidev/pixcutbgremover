@@ -95,11 +95,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       <div className="bg-[#16171a] border border-[#27272a] rounded-lg max-w-md w-full p-6 text-zinc-100 space-y-5">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#27272a]">
-          <div>
-            <h3 className="text-sm font-semibold text-zinc-100 tracking-tight">Export Cutout Image</h3>
-            <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
-              Dimensions: {width} × {height} px
-            </p>
+          <div className="flex items-center gap-2.5">
+            <img src="/icon.png" alt="PixCutBg" className="w-6 h-6 rounded object-contain" />
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-100 tracking-tight">Export Cutout Image</h3>
+              <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                Dimensions: {width} × {height} px
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
