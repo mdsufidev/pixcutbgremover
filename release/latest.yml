@@ -1,8 +1,8 @@
 version: 1.0.0
 files:
   - url: PixCut-Desktop-Setup-1.0.0.exe
-    sha512: 70LK4Z63KiHQhXquz1ICUwWJbKl7daxJB4VQmmtg6PCn4LNrh5gq+pJDp+pIcZ5MVyv+EGiZMBNvq82OwPGvuw==
-    size: 368255544
+    sha512: ySk52PDztEWzDJsIqOme4/i6AbraFhN5CPXtI7+7ZmcmW2tpDTDNQrsYc7wGWbXoBrR5sEOgug9vJbz+63buIQ==
+    size: 368265849
 path: PixCut-Desktop-Setup-1.0.0.exe
-sha512: 70LK4Z63KiHQhXquz1ICUwWJbKl7daxJB4VQmmtg6PCn4LNrh5gq+pJDp+pIcZ5MVyv+EGiZMBNvq82OwPGvuw==
-releaseDate: '2026-10-22T06:16:44.033Z'
+sha512: ySk52PDztEWzDJsIqOme4/i6AbraFhN5CPXtI7+7ZmcmW2tpDTDNQrsYc7wGWbXoBrR5sEOgug9vJbz+63buIQ==
+releaseDate: '2026-10-22T06:48:32.068Z'
