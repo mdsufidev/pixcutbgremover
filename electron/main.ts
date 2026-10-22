@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { DaemonManager } from './daemon';
+import { downloadFileWithRedirects } from './downloader';
 
 let mainWindow: BrowserWindow | null = null;
 const daemon = new DaemonManager();
@@ -178,6 +179,45 @@ ipcMain.handle('file-save', async (_event, filePath: string, arrayBuffer: ArrayB
   } catch (error: any) {
     return { success: false, error: error.message };
   }
+});
+
+ipcMain.handle('check-backend-installed', async () => {
+  const isHealthy = await daemon.checkHealth();
+  const exePath = daemon.getExecutablePath();
+  return {
+    installed: isHealthy || exePath !== null,
+    path: exePath || undefined,
+  };
+});
+
+ipcMain.handle('download-backend', async (_event, customUrl?: string) => {
+  const downloadUrl =
+    customUrl ||
+    'https://github.com/mdsufidev/pixcutbgremover/releases/download/v1.0.0/pixcut-ai-daemon.exe';
+  const targetPath = daemon.getTargetDownloadPath();
+
+  console.log(`[PixCut Main] Starting backend download from: ${downloadUrl}`);
+  console.log(`[PixCut Main] Target destination: ${targetPath}`);
+
+  try {
+    await downloadFileWithRedirects(downloadUrl, targetPath, (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('backend-download-progress', progress);
+      }
+    });
+
+    console.log('[PixCut Main] Backend downloaded successfully. Launching daemon...');
+    const started = await daemon.start();
+    return { success: started };
+  } catch (err: any) {
+    console.error('[PixCut Main] Download failed:', err);
+    return { success: false, error: err.message || 'Download failed' };
+  }
+});
+
+ipcMain.handle('restart-backend', async () => {
+  await daemon.stop();
+  return await daemon.start();
 });
 
 // App Lifecycle

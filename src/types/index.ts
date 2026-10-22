@@ -91,6 +91,17 @@ declare global {
         error?: string;
       }>;
       getDaemonUrl: () => Promise<string>;
+      checkBackendInstalled: () => Promise<{ installed: boolean; path?: string }>;
+      downloadBackend: (customUrl?: string) => Promise<{ success: boolean; error?: string }>;
+      onBackendDownloadProgress: (
+        callback: (progress: {
+          percent: number;
+          downloadedMB: number;
+          totalMB: number;
+          speedMBs: number;
+        }) => void
+      ) => () => void;
+      restartBackend: () => Promise<boolean>;
       isElectron: boolean;
     };
   }

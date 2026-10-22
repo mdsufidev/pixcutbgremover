@@ -6,6 +6,7 @@ import { HistoryBar } from './components/HistoryBar';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import { ExportModal } from './components/ExportModal';
 import { SettingsModal } from './components/SettingsModal';
+import { BackendSetupModal } from './components/BackendSetupModal';
 import { SystemStatus } from './components/SystemStatus';
 import { ToolType, AspectRatioPreset, CropRect, HardwareInfo, ImageMetadata } from './types';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
@@ -37,6 +38,7 @@ export const App: React.FC = () => {
   const [isSplitView, setIsSplitView] = useState<boolean>(false);
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isBackendSetupOpen, setIsBackendSetupOpen] = useState<boolean>(false);
 
   // Crop Tool State
   const [cropAspectRatio, setCropAspectRatio] = useState<AspectRatioPreset>('free');
@@ -65,6 +67,11 @@ export const App: React.FC = () => {
       if (ok) {
         const info = await getHardwareInfo();
         if (isMounted) setHardwareInfo(info);
+      } else if (window.electronAPI?.checkBackendInstalled) {
+        const status = await window.electronAPI.checkBackendInstalled();
+        if (!status.installed && isMounted) {
+          setIsBackendSetupOpen(true);
+        }
       }
     };
 
@@ -552,6 +559,18 @@ export const App: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         currentHardware={hardwareInfo}
         onHardwareUpdated={(updated) => setHardwareInfo(updated)}
+      />
+
+      {/* First-time Backend Setup Modal (Downloads FastAPI AI Engine from GitHub) */}
+      <BackendSetupModal
+        isOpen={isBackendSetupOpen}
+        onSuccess={() => {
+          setIsBackendSetupOpen(false);
+          pingDaemon().then((ok) => {
+            setDaemonHealthy(ok);
+            if (ok) getHardwareInfo().then(setHardwareInfo);
+          });
+        }}
       />
     </div>
   );

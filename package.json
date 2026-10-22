@@ -29,11 +29,6 @@
     ],
     "extraResources": [
       {
-        "from": "resources/backend-dist",
-        "to": "backend-dist",
-        "filter": ["**/*"]
-      },
-      {
         "from": "resources/icons",
         "to": "icons",
         "filter": ["**/*"]
@@ -51,7 +46,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "installerIcon": "resources/icons/icon.ico",
-      "uninstallerIcon": "resources/icons/icon.ico"
+      "uninstallerIcon": "resources/icons/icon.ico",
+      "artifactName": "PixCutBg-Desktop-Setup-${version}.${ext}"
     },
     "linux": {
       "target": ["AppImage", "tar.gz"],
