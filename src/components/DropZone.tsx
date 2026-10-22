@@ -1,5 +1,6 @@
 import React, { useState, useRef, DragEvent } from 'react';
 import { Upload, Image as ImageIcon, FolderOpen, Zap, Shield, Sparkles } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 interface DropZoneProps {
   onImageSelected: (fileOrBlob: File | Blob, name: string) => void;
@@ -103,7 +104,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
       {/* Brand Logo Banner */}
       <div className="mb-6 flex flex-col items-center">
         <img
-          src="/logo.png"
+          src={logoImg}
           alt="PixCutBg Desktop"
           className="h-11 object-contain select-none pointer-events-none"
         />

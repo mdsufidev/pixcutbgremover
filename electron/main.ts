@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { DaemonManager } from './daemon';
@@ -7,13 +7,32 @@ let mainWindow: BrowserWindow | null = null;
 const daemon = new DaemonManager();
 
 async function createWindow() {
-  const iconIco = path.join(__dirname, '../resources/icons/icon.ico');
-  const iconPng = path.join(__dirname, '../resources/icons/icon.png');
-  const appIcon = fs.existsSync(iconIco) ? iconIco : (fs.existsSync(iconPng) ? iconPng : undefined);
+  const candidateIconPaths = [
+    path.join(process.resourcesPath, 'icons', 'icon.ico'),
+    path.join(process.resourcesPath, 'icons', 'icon.png'),
+    path.join(__dirname, '../resources/icons/icon.ico'),
+    path.join(__dirname, '../resources/icons/icon.png'),
+    path.join(__dirname, '../../resources/icons/icon.ico'),
+    path.join(__dirname, '../../resources/icons/icon.png'),
+    path.join(__dirname, '../public/icon.png'),
+  ];
+
+  let windowIcon: Electron.NativeImage | undefined;
+  for (const p of candidateIconPaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const nImg = nativeImage.createFromPath(p);
+        if (!nImg.isEmpty()) {
+          windowIcon = nImg;
+          break;
+        }
+      } catch {}
+    }
+  }
 
   mainWindow = new BrowserWindow({
     title: 'PixCutBg Desktop',
-    icon: appIcon,
+    icon: windowIcon,
     width: 1280,
     height: 840,
     minWidth: 1000,
@@ -28,6 +47,10 @@ async function createWindow() {
     },
     show: false,
   });
+
+  if (windowIcon && mainWindow) {
+    mainWindow.setIcon(windowIcon);
+  }
 
   const isDev = !app.isPackaged;
 
@@ -159,6 +182,11 @@ ipcMain.handle('file-save', async (_event, filePath: string, arrayBuffer: ArrayB
 
 // App Lifecycle
 app.whenReady().then(async () => {
+  // CRITICAL FOR WINDOWS TASKBAR: Set application ID so Windows groups taskbar items and shows custom icon
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.pixcut.desktop');
+  }
+
   // 1. Show the desktop window IMMEDIATELY so user gets instant visual feedback
   await createWindow();
 

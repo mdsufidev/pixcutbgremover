@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Minus, Square, Copy, X, Cpu, Zap, Scissors } from 'lucide-react';
 import { HardwareInfo } from '../types';
+import logoImg from '../assets/logo.png';
+import iconImg from '../assets/icon.png';
 
 interface TitleBarProps {
   hardwareInfo: HardwareInfo | null;
@@ -40,11 +42,11 @@ export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy 
       <div className="flex items-center gap-3 app-no-drag">
         <div className="flex items-center gap-2">
           <img
-            src="/logo.png"
+            src={logoImg}
             alt="PixCutBg Desktop"
-            className="h-5 object-contain"
+            className="h-5 w-auto object-contain select-none pointer-events-none"
           />
-          <span className="text-[10px] px-1 py-0.2 rounded border border-[#27272a] text-zinc-500 font-mono">
+          <span className="text-[10px] px-1.5 py-0.5 rounded border border-[#27272a] text-zinc-500 font-mono">
             v1.0.0
           </span>
         </div>

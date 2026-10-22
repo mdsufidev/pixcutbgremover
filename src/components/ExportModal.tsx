@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Download, Check, FileCheck, Palette } from 'lucide-react';
 import { ExportSettings } from '../types';
+import iconImg from '../assets/icon.png';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -96,7 +97,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#27272a]">
           <div className="flex items-center gap-2.5">
-            <img src="/icon.png" alt="PixCutBg" className="w-6 h-6 rounded object-contain" />
+            <img src={iconImg} alt="PixCutBg" className="w-6 h-6 rounded object-contain" />
             <div>
               <h3 className="text-sm font-semibold text-zinc-100 tracking-tight">Export Cutout Image</h3>
               <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
