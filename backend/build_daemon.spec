@@ -38,8 +38,19 @@ hidden_imports = [
     'onnxruntime',
     'PIL',
     'PIL.Image',
-    'psutil'
-] + collect_submodules('rembg') + collect_submodules('uvicorn') + collect_submodules('fastapi')
+    'psutil',
+    'scipy',
+    'scipy.ndimage',
+    'scipy.spatial',
+    'pymatting',
+    'skimage',
+    'skimage.morphology',
+    'skimage.segmentation',
+    'pooch',
+    'tqdm',
+    'jsonschema',
+    'unittest',
+] + collect_submodules('rembg') + collect_submodules('uvicorn') + collect_submodules('fastapi') + collect_submodules('pymatting')
 
 a = Analysis(
     ['main.py'],
@@ -50,7 +61,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['tkinter', 'matplotlib', 'scipy', 'IPython'],
+    excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

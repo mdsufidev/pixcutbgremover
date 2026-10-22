@@ -84,10 +84,14 @@ class BackgroundRemovalEngine:
                 logger.warning(f"Failed to load with preferred providers ({load_err}). Explicitly falling back to CPUExecutionProvider.")
                 self.session = rembg.new_session(self.default_model, providers=["CPUExecutionProvider"])
                 self.current_provider = "CPU (Multi-Threaded)"
-        except ImportError:
-            logger.warning("rembg is not installed. Running in mock/development mode.")
+        except ImportError as e:
+            logger.exception(f"rembg is not installed or import error: {e}. Running in mock/development mode.")
             self.session = None
             self.current_provider = "Mock Engine (Install rembg for production)"
+        except Exception as e:
+            logger.exception(f"Unexpected error during session initialization: {e}")
+            self.session = None
+            self.current_provider = f"Init Error ({type(e).__name__})"
 
     def get_hardware_info(self) -> Dict[str, Any]:
         """
