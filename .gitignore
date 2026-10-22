@@ -1,0 +1,33 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist/
+dist-electron/
+build/
+*.log
+
+# Python cache & virtualenvs
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv
+env/
+venv/
+ENV/
+
+# Large release intermediates (keep the main exe files)
+release/win-unpacked/resources/backend-dist/_internal/
+resources/backend-dist/pixcut-ai-daemon/_internal/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+*.tsbuildinfo
+

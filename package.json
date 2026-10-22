@@ -1,0 +1,74 @@
+{
+  "name": "pixcut-desktop",
+  "version": "1.0.0",
+  "description": "High-Performance Standalone Desktop Background Remover powered by React and local rembg AI engine",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev:vite": "vite",
+    "dev": "vite",
+    "build:electron": "tsc -p tsconfig.node.json",
+    "build:vite": "vite build",
+    "build": "npm run build:vite && npm run build:electron",
+    "start": "electron dist-electron/main.js",
+    "pack:win": "npm run build && electron-builder --win --x64",
+    "pack:linux": "npm run build && electron-builder --linux AppImage",
+    "py:run": "python -m uvicorn backend.main:app --host 127.0.0.1 --port 8765 --reload",
+    "py:build": "pyinstaller backend/build_daemon.spec --noconfirm --distpath resources/backend-dist"
+  },
+  "build": {
+    "appId": "com.pixcut.desktop",
+    "productName": "PixCut Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/backend-dist/pixcut-ai-daemon",
+        "to": "backend-dist",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": ["dir"],
+      "signAndEditExecutable": false
+    },
+    "linux": {
+      "target": ["AppImage", "tar.gz"],
+      "category": "Graphics"
+    }
+  },
+  "keywords": [
+    "background-remover",
+    "pixcut",
+    "rembg",
+    "electron",
+    "react",
+    "onnx"
+  ],
+  "author": "PixCut Team",
+  "license": "MIT",
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.7",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
