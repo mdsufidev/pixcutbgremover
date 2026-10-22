@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Minus, Square, Copy, X, Cpu, Zap, Scissors } from 'lucide-react';
+import { Minus, Square, Copy, X, Cpu, Zap, Settings } from 'lucide-react';
 import { HardwareInfo } from '../types';
 import logoImg from '../assets/logo.png';
-import iconImg from '../assets/icon.png';
 
 interface TitleBarProps {
   hardwareInfo: HardwareInfo | null;
   daemonHealthy: boolean;
+  onOpenSettings?: () => void;
 }
 
-export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy }) => {
+export const TitleBar: React.FC<TitleBarProps> = ({
+  hardwareInfo,
+  daemonHealthy,
+  onOpenSettings,
+}) => {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -51,8 +55,13 @@ export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy 
           </span>
         </div>
 
-        {/* Engine status indicator */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#18181b] border border-[#27272a] text-[11px]">
+        {/* Engine status indicator (clickable to open Settings) */}
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          title="Click to configure GPU/CPU hardware acceleration"
+          className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#18181b] border border-[#27272a] hover:border-zinc-500 hover:bg-[#202124] text-[11px] transition-colors cursor-pointer"
+        >
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               daemonHealthy ? (isGpu ? 'bg-emerald-500' : 'bg-zinc-300') : 'bg-amber-500'
@@ -64,7 +73,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy 
               {hardwareInfo ? hardwareInfo.accelerator : daemonHealthy ? 'Ready' : 'Connecting daemon...'}
             </span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Middle: Subtle subtitle */}
@@ -72,8 +81,18 @@ export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy 
         Local Neural Background Remover
       </div>
 
-      {/* Right: Window Controls */}
-      <div className="flex items-center app-no-drag">
+      {/* Right: Settings & Window Controls */}
+      <div className="flex items-center gap-1 app-no-drag">
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-[#27272a] rounded transition-colors duration-150 mr-1"
+            title="Settings (Select GPU / CPU & System Specs)"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         {window.electronAPI ? (
           <div className="flex items-center">
             <button

@@ -5,6 +5,7 @@ import { Toolbar } from './components/Toolbar';
 import { HistoryBar } from './components/HistoryBar';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import { ExportModal } from './components/ExportModal';
+import { SettingsModal } from './components/SettingsModal';
 import { SystemStatus } from './components/SystemStatus';
 import { ToolType, AspectRatioPreset, CropRect, HardwareInfo, ImageMetadata } from './types';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
   const [showOriginal, setShowOriginal] = useState<boolean>(false);
   const [isSplitView, setIsSplitView] = useState<boolean>(false);
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
   // Crop Tool State
   const [cropAspectRatio, setCropAspectRatio] = useState<AspectRatioPreset>('free');
@@ -409,7 +411,11 @@ export const App: React.FC = () => {
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0f1012] text-zinc-100 overflow-hidden font-sans select-none">
       {/* 1. Minimal Window Chrome TitleBar */}
-      <TitleBar hardwareInfo={hardwareInfo} daemonHealthy={daemonHealthy} />
+      <TitleBar
+        hardwareInfo={hardwareInfo}
+        daemonHealthy={daemonHealthy}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
       {/* Clean 2D Processing Loading Indicator */}
       {isProcessing && (
@@ -529,6 +535,7 @@ export const App: React.FC = () => {
         hardwareInfo={hardwareInfo}
         daemonHealthy={daemonHealthy}
         isProcessing={isProcessing}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Export Modal */}
@@ -537,6 +544,14 @@ export const App: React.FC = () => {
         onClose={() => setIsExportOpen(false)}
         canvasRef={canvasRef}
         defaultFileName={activeMetadata?.name || 'pixcut-output.png'}
+      />
+
+      {/* Settings & Hardware Acceleration Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currentHardware={hardwareInfo}
+        onHardwareUpdated={(updated) => setHardwareInfo(updated)}
       />
     </div>
   );

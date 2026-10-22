@@ -1,9 +1,11 @@
 """
 PixCut Core AI Engine: High-performance background removal using rembg & ONNX Runtime.
-Auto-detects CPU/GPU (CUDAExecutionProvider / CPUExecutionProvider) with graceful fallback.
+Auto-detects CPU/GPU (DirectML / CUDAExecutionProvider / CPUExecutionProvider) with persistent user preference.
 """
 
 import io
+import os
+import json
 import time
 import logging
 from typing import Dict, Any, Tuple, Optional
@@ -12,10 +14,56 @@ from PIL import Image
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("pixcut.engine")
 
+
+def get_config_path() -> str:
+    """Returns absolute path to persistent settings.json."""
+    appdata = os.environ.get("APPDATA")
+    if appdata:
+        cfg_dir = os.path.join(appdata, "PixCutBg")
+    else:
+        cfg_dir = os.path.join(os.path.expanduser("~"), ".pixcut")
+    os.makedirs(cfg_dir, exist_ok=True)
+    return os.path.join(cfg_dir, "settings.json")
+
+
+def load_saved_settings() -> Dict[str, Any]:
+    """Loads saved settings from disk, defaulting to auto device preference."""
+    try:
+        path = get_config_path()
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+    except Exception as e:
+        logger.warning(f"Could not load settings file: {e}")
+    return {"device_preference": "auto"}
+
+
+def save_settings_to_disk(settings: Dict[str, Any]) -> bool:
+    """Persists settings to disk so user choices survive app restarts."""
+    try:
+        path = get_config_path()
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=2)
+        return True
+    except Exception as e:
+        logger.warning(f"Could not save settings file: {e}")
+        return False
+
+
 class BackgroundRemovalEngine:
     def __init__(self, default_model: str = "u2net"):
         self.default_model = default_model
         self.current_provider: str = "CPUExecutionProvider"
+        self.detected_gpu_name: Optional[str] = self._detect_gpu_name()
+
+        # Load permanent user preference (auto, gpu, cpu)
+        saved = load_saved_settings()
+        self.device_preference: str = saved.get("device_preference", "auto").lower()
+        if self.device_preference not in ("auto", "gpu", "cpu"):
+            self.device_preference = "auto"
+
         self.session = None
         self._initialize_session()
 
@@ -48,9 +96,9 @@ class BackgroundRemovalEngine:
             pass
         return None
 
-    def _detect_providers(self) -> Tuple[list, str]:
+    def _get_providers_for_preference(self, preference: str) -> Tuple[list, str]:
         """
-        Determines the best candidate ONNX Runtime execution providers to request.
+        Determines candidate ONNX Runtime execution providers based on user preference ('auto', 'gpu', 'cpu').
         DirectML provides out-of-the-box hardware GPU acceleration for NVIDIA, AMD,
         and Intel GPUs on Windows without requiring separate CUDA installations.
         """
@@ -58,20 +106,31 @@ class BackgroundRemovalEngine:
             import onnxruntime as ort
             available = ort.get_available_providers()
             logger.info(f"Available ONNX Runtime providers: {available}")
-            
-            candidates = []
-            if "DmlExecutionProvider" in available:
-                candidates.append("DmlExecutionProvider")
-            if "CUDAExecutionProvider" in available:
-                candidates.append("CUDAExecutionProvider")
-            if "CoreMLExecutionProvider" in available:
-                candidates.append("CoreMLExecutionProvider")
-            candidates.append("CPUExecutionProvider")
-            
-            return candidates, "Auto-Detect"
         except Exception as e:
             logger.warning(f"Could not query onnxruntime providers: {e}. Defaulting to CPU.")
-            return ["CPUExecutionProvider"], "CPU (Multi-Threaded)"
+            available = ["CPUExecutionProvider"]
+
+        gpu_providers = []
+        if "DmlExecutionProvider" in available:
+            gpu_providers.append("DmlExecutionProvider")
+        if "CUDAExecutionProvider" in available:
+            gpu_providers.append("CUDAExecutionProvider")
+        if "CoreMLExecutionProvider" in available:
+            gpu_providers.append("CoreMLExecutionProvider")
+
+        if preference == "cpu":
+            return ["CPUExecutionProvider"], "CPU (Forced)"
+        elif preference == "gpu":
+            if gpu_providers:
+                # Include CPU as second candidate in case a specific GPU operator is unmapped
+                return gpu_providers + ["CPUExecutionProvider"], "GPU (Forced)"
+            else:
+                logger.warning("GPU preferred, but no GPU provider found in ONNX. Falling back to CPU.")
+                return ["CPUExecutionProvider"], "CPU (No GPU found)"
+        else:  # "auto"
+            if gpu_providers:
+                return gpu_providers + ["CPUExecutionProvider"], "Auto-Detect"
+            return ["CPUExecutionProvider"], "Auto-Detect (CPU)"
 
     def _resolve_active_provider_name(self) -> str:
         """
@@ -85,7 +144,7 @@ class BackgroundRemovalEngine:
             if inner and hasattr(inner, "get_providers"):
                 active = inner.get_providers()
                 logger.info(f"Active runtime providers bound to session: {active}")
-                gpu_name = self._detect_gpu_name()
+                gpu_name = self.detected_gpu_name or self._detect_gpu_name()
                 if "CUDAExecutionProvider" in active:
                     return f"CUDA ({gpu_name})" if gpu_name else "CUDA (NVIDIA GPU)"
                 elif "DmlExecutionProvider" in active:
@@ -105,9 +164,9 @@ class BackgroundRemovalEngine:
         """
         try:
             import rembg
-            providers, _ = self._detect_providers()
-            logger.info(f"Attempting to initialize rembg session with providers: {providers}")
-            
+            providers, label = self._get_providers_for_preference(self.device_preference)
+            logger.info(f"Initializing rembg session (preference: '{self.device_preference}') with providers: {providers}")
+
             try:
                 self.session = rembg.new_session(self.default_model, providers=providers)
                 self.current_provider = self._resolve_active_provider_name()
@@ -120,7 +179,7 @@ class BackgroundRemovalEngine:
                 except Exception as warm_err:
                     logger.debug(f"Pre-warm non-critical: {warm_err}")
             except Exception as load_err:
-                logger.warning(f"Failed to load with preferred providers ({load_err}). Explicitly falling back to CPUExecutionProvider.")
+                logger.warning(f"Failed to load with preferred providers ({load_err}). Falling back to CPUExecutionProvider.")
                 self.session = rembg.new_session(self.default_model, providers=["CPUExecutionProvider"])
                 self.current_provider = "CPU (Multi-Threaded)"
                 try:
@@ -137,11 +196,51 @@ class BackgroundRemovalEngine:
             self.session = None
             self.current_provider = f"Init Error ({type(e).__name__})"
 
+    def set_device_preference(self, preference: str) -> Dict[str, Any]:
+        """
+        Sets permanent device preference ('auto', 'gpu', 'cpu'), writes to disk,
+        and re-initializes the session with the new provider immediately.
+        """
+        pref = preference.lower().strip()
+        if pref not in ("auto", "gpu", "cpu"):
+            raise ValueError(f"Invalid device preference: {preference}. Expected 'auto', 'gpu', or 'cpu'.")
+
+        self.device_preference = pref
+        # Persist permanently
+        save_settings_to_disk({
+            "device_preference": pref,
+            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        })
+        logger.info(f"Saved permanent device preference '{pref}' to {get_config_path()}")
+
+        # Reload session with new preference
+        self._initialize_session()
+        return self.get_settings()
+
+    def get_settings(self) -> Dict[str, Any]:
+        """
+        Returns full settings details including permanent preference,
+        detected hardware, and active provider.
+        """
+        try:
+            import onnxruntime as ort
+            available = ort.get_available_providers()
+        except Exception:
+            available = ["CPUExecutionProvider"]
+
+        return {
+            "device_preference": self.device_preference,
+            "active_provider": self.current_provider,
+            "detected_gpu": self.detected_gpu_name,
+            "available_providers": available,
+            "config_path": get_config_path(),
+            "hardware": self.get_hardware_info()
+        }
+
     def get_hardware_info(self) -> Dict[str, Any]:
         """
         Returns hardware and provider diagnostics for desktop UI display.
         """
-        import os
         import platform
         import psutil
 
@@ -150,6 +249,8 @@ class BackgroundRemovalEngine:
 
         return {
             "accelerator": self.current_provider,
+            "device_preference": self.device_preference,
+            "detected_gpu": self.detected_gpu_name,
             "os": f"{platform.system()} {platform.release()}",
             "arch": platform.machine(),
             "cpu_cores": cpu_count,
@@ -171,15 +272,13 @@ class BackgroundRemovalEngine:
         Removes background from raw image bytes and returns PNG bytes with transparent alpha.
         """
         start_time = time.perf_counter()
-        
-        # Read input image with PIL
+
         input_image = Image.open(io.BytesIO(image_bytes))
         orig_width, orig_height = input_image.size
         orig_format = input_image.format or "UNKNOWN"
 
         if self.session is not None:
             import rembg
-            # Process via rembg session
             output_image = rembg.remove(
                 input_image,
                 session=self.session,
@@ -189,15 +288,12 @@ class BackgroundRemovalEngine:
                 alpha_matting_erode_size=alpha_matting_erode_size
             )
         else:
-            # Fallback mock mode: returns an RGBA image with vignette transparency for local testing without rembg
             output_image = input_image.convert("RGBA")
             logger.info("Using mock image processing because rembg session is uninitialized.")
 
-        # Ensure image is in RGBA mode
         if output_image.mode != "RGBA":
             output_image = output_image.convert("RGBA")
 
-        # Encode to high-quality PNG with fast compression
         output_buffer = io.BytesIO()
         output_image.save(output_buffer, format="PNG", compress_level=1)
         result_bytes = output_buffer.getvalue()

@@ -8,6 +8,7 @@ import os
 import argparse
 import logging
 from contextlib import asynccontextmanager
+from pydantic import BaseModel, Field
 from fastapi import FastAPI, File, UploadFile, Query, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,6 +16,11 @@ from backend.engine import engine
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("pixcut.server")
+
+
+class DevicePreferenceRequest(BaseModel):
+    preference: str = Field(..., description="Target execution device: 'auto', 'gpu', or 'cpu'")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,7 +51,8 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "PixCut AI Engine",
-        "engine_status": engine.current_provider
+        "engine_status": engine.current_provider,
+        "device_preference": engine.device_preference
     }
 
 @app.get("/api/hardware-info")
@@ -56,6 +63,28 @@ async def get_hardware_info():
         return JSONResponse(content={"success": True, "data": info})
     except Exception as e:
         logger.error(f"Error fetching hardware info: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.get("/api/settings")
+async def get_settings():
+    """Returns persistent device preference and active accelerator specs."""
+    try:
+        settings = engine.get_settings()
+        return JSONResponse(content={"success": True, "data": settings})
+    except Exception as e:
+        logger.error(f"Error fetching settings: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.post("/api/settings/device")
+async def set_device_preference(req: DevicePreferenceRequest):
+    """Sets permanent device preference ('auto', 'gpu', 'cpu') and reloads AI engine session."""
+    try:
+        updated = engine.set_device_preference(req.preference)
+        return JSONResponse(content={"success": True, "data": updated})
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error updating device preference: {e}")
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
 @app.post("/api/remove-bg")

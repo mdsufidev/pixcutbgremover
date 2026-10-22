@@ -1,4 +1,4 @@
-import { HardwareInfo } from '../types';
+import { HardwareInfo, DevicePreference, EngineSettings } from '../types';
 
 let cachedDaemonBaseUrl: string | null = null;
 
@@ -50,6 +50,49 @@ export async function getHardwareInfo(): Promise<HardwareInfo | null> {
   } catch {
     return null;
   }
+}
+
+export async function getEngineSettings(): Promise<EngineSettings | null> {
+  const baseUrl = await getDaemonBaseUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/settings`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json.success && json.data) {
+      if (json.data.device_preference) {
+        localStorage.setItem('pixcut_device_pref', json.data.device_preference);
+      }
+      return json.data;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveDevicePreference(preference: DevicePreference): Promise<EngineSettings> {
+  const baseUrl = await getDaemonBaseUrl();
+  localStorage.setItem('pixcut_device_pref', preference);
+
+  const res = await fetch(`${baseUrl}/api/settings/device`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ preference }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Failed to update device preference: ${errText}`);
+  }
+
+  const json = await res.json();
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to update device preference');
+  }
+
+  return json.data;
 }
 
 export async function processBackgroundRemoval(

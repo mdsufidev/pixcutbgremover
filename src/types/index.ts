@@ -2,6 +2,8 @@ export type ToolType = 'pan' | 'magic-erase' | 'brush-erase' | 'restore-brush' |
 
 export type AspectRatioPreset = 'free' | '1:1' | '16:9' | '4:3' | '3:2' | '9:16' | '2:3';
 
+export type DevicePreference = 'auto' | 'gpu' | 'cpu';
+
 export interface CropRect {
   x: number;
   y: number;
@@ -11,6 +13,8 @@ export interface CropRect {
 
 export interface HardwareInfo {
   accelerator: string;
+  device_preference?: DevicePreference;
+  detected_gpu?: string | null;
   os: string;
   arch: string;
   cpu_cores: number;
@@ -18,6 +22,15 @@ export interface HardwareInfo {
   ram_available_gb: number;
   model_loaded: string;
   status: string;
+}
+
+export interface EngineSettings {
+  device_preference: DevicePreference;
+  active_provider: string;
+  detected_gpu: string | null;
+  available_providers: string[];
+  config_path?: string;
+  hardware: HardwareInfo;
 }
 
 export interface ImageMetadata {
