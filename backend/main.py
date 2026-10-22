@@ -7,6 +7,7 @@ import sys
 import os
 import argparse
 import logging
+from typing import Optional
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
 from fastapi import FastAPI, File, UploadFile, Query, HTTPException, Response
@@ -20,6 +21,19 @@ logger = logging.getLogger("pixcut.server")
 
 class DevicePreferenceRequest(BaseModel):
     preference: str = Field(..., description="Target execution device: 'auto', 'gpu', or 'cpu'")
+
+
+class ModelPreferenceRequest(BaseModel):
+    model: str = Field(..., description="Target AI model: 'u2net', 'u2netp', 'silueta', 'isnet-general-use'")
+
+
+class SettingsUpdateRequest(BaseModel):
+    device_preference: Optional[str] = Field(None, description="Execution device: 'auto', 'gpu', or 'cpu'")
+    model_preference: Optional[str] = Field(None, description="AI model: 'u2net', 'u2netp', 'silueta', 'isnet-general-use'")
+
+
+class DownloadModelRequest(BaseModel):
+    model_id: str = Field(..., description="Model ID to download from internet")
 
 
 @asynccontextmanager
@@ -42,7 +56,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Inference-Time-Ms", "X-Image-Width", "X-Image-Height", "X-Device"]
+    expose_headers=["X-Inference-Time-Ms", "X-Image-Width", "X-Image-Height", "X-Device", "X-Model"]
 )
 
 @app.get("/health")
@@ -52,7 +66,8 @@ async def health_check():
         "status": "healthy",
         "service": "PixCut AI Engine",
         "engine_status": engine.current_provider,
-        "device_preference": engine.device_preference
+        "device_preference": engine.device_preference,
+        "model_preference": engine.model_preference
     }
 
 @app.get("/api/hardware-info")
@@ -65,14 +80,49 @@ async def get_hardware_info():
         logger.error(f"Error fetching hardware info: {e}")
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
+@app.get("/api/models")
+async def get_models():
+    """Returns all supported AI models with their download and active statuses."""
+    try:
+        models = engine.get_available_models()
+        return JSONResponse(content={"success": True, "data": models})
+    except Exception as e:
+        logger.error(f"Error fetching models: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.post("/api/models/download")
+async def download_model(req: DownloadModelRequest):
+    """Downloads model weights on-demand from internet into local cache."""
+    try:
+        result = engine.download_model(req.model_id)
+        return JSONResponse(content={"success": True, "data": result})
+    except Exception as e:
+        logger.error(f"Error downloading model: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
 @app.get("/api/settings")
 async def get_settings():
-    """Returns persistent device preference and active accelerator specs."""
+    """Returns persistent device & model preferences, active provider, and specs."""
     try:
         settings = engine.get_settings()
         return JSONResponse(content={"success": True, "data": settings})
     except Exception as e:
         logger.error(f"Error fetching settings: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.post("/api/settings")
+async def update_settings(req: SettingsUpdateRequest):
+    """Updates device preference and/or AI model preference permanently and reloads engine."""
+    try:
+        updated = engine.set_configuration(
+            device_preference=req.device_preference,
+            model_preference=req.model_preference
+        )
+        return JSONResponse(content={"success": True, "data": updated})
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error updating settings: {e}")
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
 @app.post("/api/settings/device")
@@ -85,6 +135,18 @@ async def set_device_preference(req: DevicePreferenceRequest):
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Error updating device preference: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.post("/api/settings/model")
+async def set_model_preference(req: ModelPreferenceRequest):
+    """Sets permanent AI model ('u2net', 'u2netp', 'silueta', 'isnet-general-use') and reloads session."""
+    try:
+        updated = engine.set_model_preference(req.model)
+        return JSONResponse(content={"success": True, "data": updated})
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error updating model preference: {e}")
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
 @app.post("/api/remove-bg")
@@ -120,7 +182,8 @@ async def remove_background(
             "X-Inference-Time-Ms": str(meta["inference_time_ms"]),
             "X-Image-Width": str(meta["width"]),
             "X-Image-Height": str(meta["height"]),
-            "X-Device": str(meta["device"])
+            "X-Device": str(meta["device"]),
+            "X-Model": str(meta.get("model", engine.model_preference))
         }
 
         return Response(content=output_png, media_type="image/png", headers=headers)
@@ -132,7 +195,6 @@ async def remove_background(
 async def shutdown():
     """Graceful daemon shutdown invoked by the desktop application lifecycle."""
     logger.info("Shutdown request received from desktop shell.")
-    # Exit cleanly in next tick
     import threading
     threading.Timer(0.5, lambda: os._exit(0)).start()
     return {"message": "Shutting down"}

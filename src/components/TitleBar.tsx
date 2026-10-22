@@ -70,7 +70,11 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           <div className="flex items-center gap-1 text-zinc-400 font-mono text-[10px]">
             {isGpu ? <Zap className="w-2.5 h-2.5 text-emerald-400" /> : <Cpu className="w-2.5 h-2.5 text-zinc-400" />}
             <span className={isGpu ? 'text-emerald-400 font-medium' : ''}>
-              {hardwareInfo ? hardwareInfo.accelerator : daemonHealthy ? 'Ready' : 'Connecting daemon...'}
+              {hardwareInfo
+                ? `${hardwareInfo.accelerator} • ${hardwareInfo.model_loaded || 'u2net'}`
+                : daemonHealthy
+                ? 'Ready'
+                : 'Connecting daemon...'}
             </span>
           </div>
         </button>

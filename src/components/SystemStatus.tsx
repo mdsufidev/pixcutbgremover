@@ -49,6 +49,8 @@ export const SystemStatus: React.FC<SystemStatusProps> = ({
               {hardwareInfo.accelerator}
             </span>
             <span className="text-zinc-700">/</span>
+            <span className="text-zinc-300 font-sans">{hardwareInfo.model_loaded || 'u2net'}</span>
+            <span className="text-zinc-700">/</span>
             <span>{hardwareInfo.cpu_cores} Cores</span>
             <span className="text-zinc-700">/</span>
             <span>{hardwareInfo.ram_available_gb} GB Free</span>

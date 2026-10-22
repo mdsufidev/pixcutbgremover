@@ -1,4 +1,4 @@
-import { HardwareInfo, DevicePreference, EngineSettings } from '../types';
+import { HardwareInfo, DevicePreference, AIModelId, AIModelInfo, EngineSettings } from '../types';
 
 let cachedDaemonBaseUrl: string | null = null;
 
@@ -28,6 +28,7 @@ export interface RemoveBgResponse {
   width: number;
   height: number;
   device: string;
+  model: string;
 }
 
 export async function pingDaemon(): Promise<boolean> {
@@ -52,6 +53,32 @@ export async function getHardwareInfo(): Promise<HardwareInfo | null> {
   }
 }
 
+export async function getAvailableModels(): Promise<AIModelInfo[]> {
+  const baseUrl = await getDaemonBaseUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/models`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.success ? json.data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function downloadModel(modelId: AIModelId): Promise<boolean> {
+  const baseUrl = await getDaemonBaseUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/models/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model_id: modelId }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function getEngineSettings(): Promise<EngineSettings | null> {
   const baseUrl = await getDaemonBaseUrl();
   try {
@@ -62,6 +89,9 @@ export async function getEngineSettings(): Promise<EngineSettings | null> {
       if (json.data.device_preference) {
         localStorage.setItem('pixcut_device_pref', json.data.device_preference);
       }
+      if (json.data.model_preference) {
+        localStorage.setItem('pixcut_model_pref', json.data.model_preference);
+      }
       return json.data;
     }
     return null;
@@ -70,29 +100,41 @@ export async function getEngineSettings(): Promise<EngineSettings | null> {
   }
 }
 
-export async function saveDevicePreference(preference: DevicePreference): Promise<EngineSettings> {
+export async function saveConfiguration(
+  device: DevicePreference,
+  model: AIModelId
+): Promise<EngineSettings> {
   const baseUrl = await getDaemonBaseUrl();
-  localStorage.setItem('pixcut_device_pref', preference);
+  localStorage.setItem('pixcut_device_pref', device);
+  localStorage.setItem('pixcut_model_pref', model);
 
-  const res = await fetch(`${baseUrl}/api/settings/device`, {
+  const res = await fetch(`${baseUrl}/api/settings`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ preference }),
+    body: JSON.stringify({
+      device_preference: device,
+      model_preference: model,
+    }),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Failed to update device preference: ${errText}`);
+    throw new Error(`Failed to update configuration: ${errText}`);
   }
 
   const json = await res.json();
   if (!json.success) {
-    throw new Error(json.error || 'Failed to update device preference');
+    throw new Error(json.error || 'Failed to update configuration');
   }
 
   return json.data;
+}
+
+export async function saveDevicePreference(preference: DevicePreference): Promise<EngineSettings> {
+  const model = (localStorage.getItem('pixcut_model_pref') as AIModelId) || 'u2net';
+  return saveConfiguration(preference, model);
 }
 
 export async function processBackgroundRemoval(
@@ -126,6 +168,7 @@ export async function processBackgroundRemoval(
   const width = parseInt(response.headers.get('X-Image-Width') || '0', 10);
   const height = parseInt(response.headers.get('X-Image-Height') || '0', 10);
   const device = response.headers.get('X-Device') || 'CPU';
+  const model = response.headers.get('X-Model') || 'u2net';
 
   return {
     blob: resultBlob,
@@ -133,5 +176,6 @@ export async function processBackgroundRemoval(
     width,
     height,
     device,
+    model,
   };
 }

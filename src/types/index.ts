@@ -4,6 +4,19 @@ export type AspectRatioPreset = 'free' | '1:1' | '16:9' | '4:3' | '3:2' | '9:16'
 
 export type DevicePreference = 'auto' | 'gpu' | 'cpu';
 
+export type AIModelId = 'u2net' | 'u2netp' | 'silueta' | 'isnet-general-use';
+
+export interface AIModelInfo {
+  id: AIModelId;
+  name: string;
+  tag: string;
+  description: string;
+  size_mb: number;
+  recommended_device: 'gpu' | 'cpu' | 'both';
+  is_downloaded: boolean;
+  is_active: boolean;
+}
+
 export interface CropRect {
   x: number;
   y: number;
@@ -14,21 +27,24 @@ export interface CropRect {
 export interface HardwareInfo {
   accelerator: string;
   device_preference?: DevicePreference;
+  model_loaded?: string;
   detected_gpu?: string | null;
   os: string;
   arch: string;
   cpu_cores: number;
   ram_total_gb: number;
   ram_available_gb: number;
-  model_loaded: string;
   status: string;
 }
 
 export interface EngineSettings {
   device_preference: DevicePreference;
+  model_preference: AIModelId;
+  active_model: string;
   active_provider: string;
   detected_gpu: string | null;
   available_providers: string[];
+  available_models: AIModelInfo[];
   config_path?: string;
   hardware: HardwareInfo;
 }
@@ -40,6 +56,7 @@ export interface ImageMetadata {
   originalSizeFormatted: string;
   inferenceTimeMs?: number;
   device?: string;
+  model?: string;
   originalUrl: string;
   processedUrl?: string;
 }
