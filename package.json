@@ -27,7 +27,7 @@
     ],
     "extraResources": [
       {
-        "from": "resources/backend-dist/pixcut-ai-daemon",
+        "from": "resources/backend-dist",
         "to": "backend-dist",
         "filter": ["**/*"]
       }

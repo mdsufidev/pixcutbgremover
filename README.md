@@ -18,11 +18,16 @@ A production-grade, standalone desktop workstation application for high-performa
 
 Anyone can download and run PixCut Desktop directly on Windows without deploying or setting up servers:
 
-| Package Type | File Name | Description |
-| :--- | :--- | :--- |
-| **Windows Setup Installer (.exe)** | [`release/PixCut Desktop Setup 1.0.0.exe`](release/PixCut%20Desktop%20Setup%201.0.0.exe) | **Recommended**: Double-click to install. Creates Desktop and Start Menu shortcuts automatically. |
-| **Windows Portable (.zip)** | [`release/PixCut-Desktop-Portable-x64.zip`](release/PixCut-Desktop-Portable-x64.zip) | Extract anywhere and double-click `PixCut Desktop.exe` to run immediately without installation. |
-| **Standalone Daemon (.exe)** | [`resources/backend-dist/pixcut-ai-daemon/pixcut-ai-daemon.exe`](resources/backend-dist/pixcut-ai-daemon/pixcut-ai-daemon.exe) | Embedded AI Neural Engine daemon powered by PyInstaller & rembg. |
+| Package Type | File Name | Size | Instructions |
+| :--- | :--- | :--- | :--- |
+| **⭐ Windows 1-Click Installer (.exe)** | [**`PixCut Desktop Setup 1.0.0.exe`**](release/PixCut%20Desktop%20Setup%201.0.0.exe) | ~291 MB | **Recommended**: Download and double-click to install. It installs all dependencies cleanly and creates a Desktop shortcut. |
+| **📦 Windows Portable Archive (.zip)** | [**`PixCut-Desktop-Portable-x64.zip`**](release/PixCut-Desktop-Portable-x64.zip) | ~331 MB | Download, **Right-click → Extract All**, then run `PixCut Desktop.exe`. No installation required. |
+| **⚡ Standalone AI Daemon (.exe)** | [**`pixcut-ai-daemon.exe`**](resources/backend-dist/pixcut-ai-daemon.exe) | ~213 MB | Single-file embedded Python FastAPI + rembg + ONNX Runtime executable with auto-fallback to CPU/CUDA. |
+
+> [!IMPORTANT]
+> **Important Note regarding `ffmpeg.dll` or `python314.dll` missing errors**:
+> If you run `PixCut Desktop.exe` directly from inside a `.zip` preview or download only a single `.exe` file without extracting its sibling DLLs, Windows will show a `missing ffmpeg.dll` error.
+> **Solution**: Always use the **1-Click Setup Installer (`PixCut Desktop Setup 1.0.0.exe`)** which automatically extracts everything to your PC, or **Extract All** from the Portable `.zip` before launching.
 
 ---
 
@@ -71,9 +76,8 @@ pixcut-bgremover/
 │   └── build_daemon.spec    # PyInstaller spec for standalone .exe / Linux binary
 │
 ├── release/
-│   ├── PixCut Desktop Setup 1.0.0.exe  # Standalone Windows Installer
-│   ├── PixCut-Desktop-Portable-x64.zip # Standalone Portable Zip Package
-│   └── win-unpacked/                   # Unpacked portable executable folder
+│   ├── PixCut Desktop Setup 1.0.0.exe  # Standalone Windows Installer (NSIS)
+│   └── PixCut-Desktop-Portable-x64.zip # Standalone Portable Zip Package
 │
 ├── PixCut-Direct-Run.bat    # 1-Click launcher for local development / testing
 └── PixCut-Build-Standalone-EXE.bat # 1-Click compiler for Windows .exe package
@@ -98,38 +102,30 @@ pip install -r backend/requirements.txt
 
 ### Step 2: Run in Development Mode
 ```bash
-# Terminal 1: Start the AI Daemon
+# Terminal 1: Start local Python AI Daemon
 npm run py:run
 
-# Terminal 2: Start Vite & Electron Shell
-npm run dev
+# Terminal 2: Start Vite & Electron desktop window
+npm run dev:vite
 npm start
 ```
 
-### Step 3: Build Standalone Installer & Portable Zip
+Or simply double-click [`PixCut-Direct-Run.bat`](PixCut-Direct-Run.bat) on Windows to start both simultaneously.
+
+### Step 3: Build Standalone Windows Packages
 ```bash
-# 1. Compile the Python AI daemon executable:
+# Build the single-file Python daemon
 npm run py:build
 
-# 2. Package the Windows Installer (.exe):
+# Package the Windows NSIS Installer (.exe)
 npm run pack:win
 ```
-The installer will be generated in `release/PixCut Desktop Setup 1.0.0.exe`.
+
+Or simply double-click [`PixCut-Build-Standalone-EXE.bat`](PixCut-Build-Standalone-EXE.bat).
+
+The built installer will be output directly into `release/PixCut Desktop Setup 1.0.0.exe`.
 
 ---
 
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Action |
-| :--- | :--- |
-| `Ctrl + Z` / `Cmd + Z` | Undo last canvas operation |
-| `Ctrl + Y` / `Ctrl + Shift + Z` | Redo canvas operation |
-| `Space + Left Drag` | Pan workspace freely |
-| `Mouse Wheel` | Smooth zoom in / out (anchored to cursor) |
-| `Middle Click + Drag` | Pan workspace |
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
+## 📜 License
+MIT License. Free for personal and commercial desktop use.

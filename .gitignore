@@ -20,9 +20,9 @@ env/
 venv/
 ENV/
 
-# Large release intermediates (keep the main exe files)
-release/win-unpacked/resources/backend-dist/_internal/
-resources/backend-dist/pixcut-ai-daemon/_internal/
+# Large release intermediates (keep the main standalone installer and zip)
+release/win-unpacked/
+resources/backend-dist/_internal/
 
 # OS files
 Thumbs.db
