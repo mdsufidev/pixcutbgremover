@@ -34,20 +34,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     setExportSuccessPath(null);
 
     try {
-      // Create offscreen export canvas
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = srcCanvas.width;
       exportCanvas.height = srcCanvas.height;
       const ctx = exportCanvas.getContext('2d');
       if (!ctx) return;
 
-      // Draw background if not transparent (or if JPG)
       if (settings.backgroundType === 'color' || settings.format === 'jpg') {
         ctx.fillStyle = settings.backgroundColor;
         ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
       }
 
-      // Draw transparent cutout onto export canvas
       ctx.drawImage(srcCanvas, 0, 0);
 
       const mimeType =
@@ -61,7 +58,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       const baseName = defaultFileName.replace(/\.[^/.]+$/, '');
       const exportName = `${baseName}_cutout.${fileExt}`;
 
-      // Native Electron save dialog flow
       if (window.electronAPI) {
         const dialogRes = await window.electronAPI.saveFileDialog(exportName);
         if (!dialogRes.canceled && dialogRes.filePath) {
@@ -77,7 +73,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           }
         }
       } else {
-        // Web fallback download
         const dataUrl = exportCanvas.toDataURL(mimeType, settings.quality);
         const link = document.createElement('a');
         link.download = exportName;
@@ -96,141 +91,154 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const height = canvasRef.current?.height || 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#12141c] border border-[#262a36] rounded-lg max-w-md w-full shadow-2xl p-6 text-zinc-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#262a36] pb-3">
-          <div className="flex items-center gap-2">
-            <Download className="w-4 h-4 text-blue-400" />
-            <h3 className="text-sm font-semibold text-zinc-100">Export Processed Image</h3>
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <div className="bg-[#16171a] border border-[#27272a] rounded-lg max-w-md w-full p-6 text-zinc-100 space-y-5">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-[#27272a]">
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-100 tracking-tight">Export Cutout Image</h3>
+            <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
+              Dimensions: {width} × {height} px
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-200 transition-colors duration-150"
+            className="w-7 h-7 rounded flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#202126] transition-colors duration-150"
           >
             <X className="w-4 h-4" />
           </button>
-        </div>
-
-        {/* Resolution Info */}
-        <div className="flex items-center justify-between text-xs font-mono bg-[#181b24] p-2.5 rounded border border-[#262a36] text-zinc-400">
-          <span>Canvas Resolution:</span>
-          <span className="text-zinc-200 font-semibold">{width} × {height} px</span>
         </div>
 
         {/* Format Selection */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-zinc-300">File Format</label>
           <div className="grid grid-cols-3 gap-2">
-            {(['png', 'webp', 'jpg'] as const).map((fmt) => (
+            {(['png', 'jpg', 'webp'] as const).map((fmt) => (
               <button
                 key={fmt}
-                onClick={() => {
+                type="button"
+                onClick={() =>
                   setSettings({
                     ...settings,
                     format: fmt,
                     backgroundType: fmt === 'jpg' ? 'color' : settings.backgroundType,
-                  });
-                }}
-                className={`py-2 px-3 rounded text-xs uppercase font-mono font-medium border transition-colors duration-150 ${
+                  })
+                }
+                className={`py-2 px-3 rounded-md text-xs font-mono uppercase transition-colors duration-150 ${
                   settings.format === fmt
-                    ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                    : 'bg-[#181b24] border-[#262a36] text-zinc-400 hover:text-white hover:bg-[#222634]'
+                    ? 'bg-zinc-100 text-zinc-900 font-medium'
+                    : 'bg-[#1e1f24] border border-[#27272a] text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                {fmt}
+                .{fmt}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Background Fill Options */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-300">Background Surface</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              disabled={settings.format === 'jpg'}
-              onClick={() => setSettings({ ...settings, backgroundType: 'transparent' })}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded text-xs border transition-colors duration-150 ${
-                settings.format === 'jpg'
-                  ? 'opacity-40 cursor-not-allowed bg-[#181b24] border-[#262a36] text-zinc-600'
-                  : settings.backgroundType === 'transparent'
-                  ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                  : 'bg-[#181b24] border-[#262a36] text-zinc-400 hover:text-white'
-              }`}
-            >
-              <span>Transparent Alpha</span>
-            </button>
-
-            <button
-              onClick={() => setSettings({ ...settings, backgroundType: 'color' })}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded text-xs border transition-colors duration-150 ${
-                settings.backgroundType === 'color'
-                  ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                  : 'bg-[#181b24] border-[#262a36] text-zinc-400 hover:text-white'
-              }`}
-            >
-              <span>Solid Color Fill</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Color Presets (When Solid Color is active) */}
-        {(settings.backgroundType === 'color' || settings.format === 'jpg') && (
-          <div className="p-3 bg-[#181b24] rounded border border-[#262a36] space-y-2">
-            <div className="flex items-center justify-between text-xs text-zinc-400">
-              <span>Choose Color:</span>
-              <span className="font-mono text-zinc-300">{settings.backgroundColor}</span>
+        {/* Background Fill (Only for PNG and WebP) */}
+        {settings.format !== 'jpg' && (
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-zinc-300">Background</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, backgroundType: 'transparent' })}
+                className={`py-2 px-3 rounded-md text-xs transition-colors duration-150 ${
+                  settings.backgroundType === 'transparent'
+                    ? 'bg-zinc-100 text-zinc-900 font-medium'
+                    : 'bg-[#1e1f24] border border-[#27272a] text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Transparent Alpha
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, backgroundType: 'color' })}
+                className={`py-2 px-3 rounded-md text-xs transition-colors duration-150 ${
+                  settings.backgroundType === 'color'
+                    ? 'bg-zinc-100 text-zinc-900 font-medium'
+                    : 'bg-[#1e1f24] border border-[#27272a] text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Solid Color
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* Solid Background Color Preset */}
+        {(settings.backgroundType === 'color' || settings.format === 'jpg') && (
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-zinc-300">Color Palette</label>
             <div className="flex items-center gap-2">
-              {['#ffffff', '#000000', '#f3f4f6', '#3b82f6', '#ef4444'].map((c) => (
+              {[
+                { label: 'White', color: '#ffffff' },
+                { label: 'Black', color: '#000000' },
+                { label: 'Slate', color: '#334155' },
+              ].map((c) => (
                 <button
-                  key={c}
-                  onClick={() => setSettings({ ...settings, backgroundColor: c })}
-                  className={`w-6 h-6 rounded border transition-transform ${
-                    settings.backgroundColor === c
-                      ? 'ring-2 ring-blue-500 scale-110 border-white'
-                      : 'border-[#262a36]'
+                  key={c.color}
+                  type="button"
+                  onClick={() => setSettings({ ...settings, backgroundColor: c.color })}
+                  className={`flex-1 py-1.5 rounded-md text-xs border flex items-center justify-center gap-1.5 ${
+                    settings.backgroundColor === c.color ? 'border-zinc-200' : 'border-[#27272a]'
                   }`}
-                  style={{ backgroundColor: c }}
-                />
+                  style={{ backgroundColor: c.color }}
+                >
+                  <span
+                    className={`text-[11px] font-mono ${
+                      c.color === '#ffffff' ? 'text-zinc-900' : 'text-zinc-100'
+                    }`}
+                  >
+                    {c.label}
+                  </span>
+                </button>
               ))}
-              <div className="relative overflow-hidden w-6 h-6 rounded border border-[#262a36] flex items-center justify-center bg-[#222634] cursor-pointer">
-                <Palette className="w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+
+              <div className="relative">
                 <input
                   type="color"
                   value={settings.backgroundColor}
                   onChange={(e) => setSettings({ ...settings, backgroundColor: e.target.value })}
-                  className="opacity-0 absolute inset-0 cursor-pointer"
+                  className="w-8 h-8 opacity-0 absolute inset-0 cursor-pointer"
                 />
+                <div
+                  className="w-8 h-8 rounded-md border border-[#27272a] flex items-center justify-center"
+                  style={{ backgroundColor: settings.backgroundColor }}
+                >
+                  <Palette className="w-3.5 h-3.5 text-white invert mix-blend-difference" />
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Success Message Banner */}
+        {/* Success Banner */}
         {exportSuccessPath && (
-          <div className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
-            <FileCheck className="w-4 h-4 flex-shrink-0" />
+          <div className="p-2.5 rounded-md bg-[#18181b] border border-[#27272a] text-xs text-zinc-200 flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span className="truncate">Saved: {exportSuccessPath}</span>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#262a36]">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#27272a]">
           <button
+            type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded text-xs text-zinc-400 hover:text-zinc-200 hover:bg-[#181b24] transition-colors duration-150"
+            className="px-4 py-2 rounded-md text-xs text-zinc-400 hover:text-white border border-[#27272a] hover:bg-[#202126] transition-colors duration-150"
           >
             Close
           </button>
           <button
+            type="button"
             onClick={handleExport}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-1.5 rounded text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium border border-blue-500 shadow-sm transition-colors duration-150 disabled:opacity-50"
+            className="px-4 py-2 rounded-md text-xs bg-zinc-100 text-zinc-900 hover:bg-white font-medium flex items-center gap-1.5 transition-colors duration-150 disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{isExporting ? 'Saving File...' : 'Save Directly to Disk'}</span>
+            <span>{isExporting ? 'Exporting...' : 'Export File'}</span>
           </button>
         </div>
       </div>

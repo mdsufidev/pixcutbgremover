@@ -1,4 +1,13 @@
-export type ToolType = 'pan' | 'magic-erase' | 'brush-erase' | 'restore-brush';
+export type ToolType = 'pan' | 'magic-erase' | 'brush-erase' | 'restore-brush' | 'crop';
+
+export type AspectRatioPreset = 'free' | '1:1' | '16:9' | '4:3' | '3:2' | '9:16' | '2:3';
+
+export interface CropRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export interface HardwareInfo {
   accelerator: string;

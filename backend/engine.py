@@ -80,10 +80,22 @@ class BackgroundRemovalEngine:
                 self.session = rembg.new_session(self.default_model, providers=providers)
                 self.current_provider = self._resolve_active_provider_name()
                 logger.info(f"Session initialized successfully. Active Provider: {self.current_provider}")
+                # Pre-warm session with a tiny image so first user inference is instant
+                try:
+                    dummy = Image.new("RGB", (64, 64), (128, 128, 128))
+                    rembg.remove(dummy, session=self.session)
+                    logger.info("ONNX neural session pre-warmed successfully.")
+                except Exception as warm_err:
+                    logger.debug(f"Pre-warm non-critical: {warm_err}")
             except Exception as load_err:
                 logger.warning(f"Failed to load with preferred providers ({load_err}). Explicitly falling back to CPUExecutionProvider.")
                 self.session = rembg.new_session(self.default_model, providers=["CPUExecutionProvider"])
                 self.current_provider = "CPU (Multi-Threaded)"
+                try:
+                    dummy = Image.new("RGB", (64, 64), (128, 128, 128))
+                    rembg.remove(dummy, session=self.session)
+                except Exception:
+                    pass
         except ImportError as e:
             logger.exception(f"rembg is not installed or import error: {e}. Running in mock/development mode.")
             self.session = None
@@ -153,9 +165,9 @@ class BackgroundRemovalEngine:
         if output_image.mode != "RGBA":
             output_image = output_image.convert("RGBA")
 
-        # Encode to high-quality PNG
+        # Encode to high-quality PNG with fast compression
         output_buffer = io.BytesIO()
-        output_image.save(output_buffer, format="PNG", optimize=True)
+        output_image.save(output_buffer, format="PNG", compress_level=1)
         result_bytes = output_buffer.getvalue()
 
         elapsed_ms = round((time.perf_counter() - start_time) * 1000, 1)

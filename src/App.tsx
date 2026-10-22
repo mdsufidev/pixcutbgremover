@@ -6,7 +6,7 @@ import { HistoryBar } from './components/HistoryBar';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import { ExportModal } from './components/ExportModal';
 import { SystemStatus } from './components/SystemStatus';
-import { ToolType, HardwareInfo, ImageMetadata } from './types';
+import { ToolType, AspectRatioPreset, CropRect, HardwareInfo, ImageMetadata } from './types';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { pingDaemon, getHardwareInfo, processBackgroundRemoval } from './services/api';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -36,6 +36,10 @@ export const App: React.FC = () => {
   const [isSplitView, setIsSplitView] = useState<boolean>(false);
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
 
+  // Crop Tool State
+  const [cropAspectRatio, setCropAspectRatio] = useState<AspectRatioPreset>('free');
+  const [cropRect, setCropRect] = useState<CropRect | null>(null);
+
   // Canvas History Stack
   const {
     pushState,
@@ -48,7 +52,7 @@ export const App: React.FC = () => {
     currentStep,
   } = useCanvasHistory();
 
-  // Poll daemon connection and system diagnostics
+  // Fast daemon ping and system diagnostics check
   useEffect(() => {
     let isMounted = true;
 
@@ -63,14 +67,180 @@ export const App: React.FC = () => {
     };
 
     checkBackend();
-    const interval = setInterval(checkBackend, 3000);
+    const interval = setInterval(checkBackend, 2500);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
   }, []);
 
-  // Keyboard Shortcuts (Undo/Redo)
+  const handleUndo = useCallback(() => {
+    const prev = undo();
+    if (prev && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        if (canvasRef.current.width !== prev.width || canvasRef.current.height !== prev.height) {
+          canvasRef.current.width = prev.width;
+          canvasRef.current.height = prev.height;
+        }
+        ctx.putImageData(prev, 0, 0);
+        if (activeMetadata) {
+          setActiveMetadata({
+            ...activeMetadata,
+            originalWidth: prev.width,
+            originalHeight: prev.height,
+          });
+        }
+      }
+    }
+  }, [undo, activeMetadata]);
+
+  const handleRedo = useCallback(() => {
+    const next = redo();
+    if (next && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        if (canvasRef.current.width !== next.width || canvasRef.current.height !== next.height) {
+          canvasRef.current.width = next.width;
+          canvasRef.current.height = next.height;
+        }
+        ctx.putImageData(next, 0, 0);
+        if (activeMetadata) {
+          setActiveMetadata({
+            ...activeMetadata,
+            originalWidth: next.width,
+            originalHeight: next.height,
+          });
+        }
+      }
+    }
+  }, [redo, activeMetadata]);
+
+  // Apply Crop Transformation
+  const handleApplyCrop = useCallback(() => {
+    if (!canvasRef.current || !cropRect) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const croppedData = ctx.getImageData(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+
+    canvas.width = cropRect.width;
+    canvas.height = cropRect.height;
+    ctx.putImageData(croppedData, 0, 0);
+
+    const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    pushState(snapshot);
+
+    if (activeMetadata) {
+      setActiveMetadata({
+        ...activeMetadata,
+        originalWidth: cropRect.width,
+        originalHeight: cropRect.height,
+      });
+    }
+
+    setCropRect(null);
+    setCurrentTool('magic-erase');
+  }, [cropRect, activeMetadata, pushState]);
+
+  const handleCancelCrop = useCallback(() => {
+    setCropRect(null);
+    setCurrentTool('magic-erase');
+  }, []);
+
+  // Quick 90 deg Clockwise Rotation
+  const handleRotateClockwise = useCallback(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const temp = document.createElement('canvas');
+    temp.width = canvas.width;
+    temp.height = canvas.height;
+    const tempCtx = temp.getContext('2d');
+    if (!tempCtx) return;
+    tempCtx.drawImage(canvas, 0, 0);
+
+    const oldW = canvas.width;
+    const oldH = canvas.height;
+    canvas.width = oldH;
+    canvas.height = oldW;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(temp, 0, 0);
+    ctx.restore();
+
+    const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    pushState(snapshot);
+
+    if (activeMetadata) {
+      setActiveMetadata({
+        ...activeMetadata,
+        originalWidth: canvas.width,
+        originalHeight: canvas.height,
+      });
+    }
+    setCropRect(null);
+  }, [activeMetadata, pushState]);
+
+  // Flip Horizontal
+  const handleFlipHorizontal = useCallback(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const temp = document.createElement('canvas');
+    temp.width = canvas.width;
+    temp.height = canvas.height;
+    const tempCtx = temp.getContext('2d');
+    if (!tempCtx) return;
+    tempCtx.drawImage(canvas, 0, 0);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(temp, 0, 0);
+    ctx.restore();
+
+    const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    pushState(snapshot);
+    setCropRect(null);
+  }, [pushState]);
+
+  // Flip Vertical
+  const handleFlipVertical = useCallback(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const temp = document.createElement('canvas');
+    temp.width = canvas.width;
+    temp.height = canvas.height;
+    const tempCtx = temp.getContext('2d');
+    if (!tempCtx) return;
+    tempCtx.drawImage(canvas, 0, 0);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(0, canvas.height);
+    ctx.scale(1, -1);
+    ctx.drawImage(temp, 0, 0);
+    ctx.restore();
+
+    const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    pushState(snapshot);
+    setCropRect(null);
+  }, [pushState]);
+
+  // Keyboard Shortcuts (Undo, Redo, Enter to Crop, Esc to Cancel Crop)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT') return;
@@ -85,34 +255,20 @@ export const App: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         handleRedo();
+      } else if (e.key === 'Enter' && currentTool === 'crop') {
+        e.preventDefault();
+        handleApplyCrop();
+      } else if (e.key === 'Escape' && currentTool === 'crop') {
+        e.preventDefault();
+        handleCancelCrop();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  });
+  }, [handleUndo, handleRedo, handleApplyCrop, handleCancelCrop, currentTool]);
 
-  const handleUndo = useCallback(() => {
-    const prev = undo();
-    if (prev && canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        ctx.putImageData(prev, 0, 0);
-      }
-    }
-  }, [undo]);
-
-  const handleRedo = useCallback(() => {
-    const next = redo();
-    if (next && canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        ctx.putImageData(next, 0, 0);
-      }
-    }
-  }, [redo]);
-
-  // Synchronize Canvas with Cutout Image without race conditions
+  // Synchronize Canvas with Cutout Image
   useEffect(() => {
     if (!cutoutImage || !canvasRef.current) return;
 
@@ -152,7 +308,7 @@ export const App: React.FC = () => {
         let inferenceTime = 0;
         let deviceUsed = 'CPU';
 
-        // Check if local daemon is running
+        // Check if local daemon is responsive
         const isBackendUp = await pingDaemon();
         if (isBackendUp) {
           const res = await processBackgroundRemoval(fileOrBlob, name);
@@ -160,19 +316,17 @@ export const App: React.FC = () => {
           inferenceTime = res.inferenceTimeMs;
           deviceUsed = res.device;
         } else {
-          // Dev preview fallback if backend isn't started yet
+          // Dev preview fallback
           resultBlob = await simulateLocalCutout(img);
-          inferenceTime = 70;
+          inferenceTime = 45;
           deviceUsed = 'Browser Canvas (Daemon Offline)';
         }
 
         metadata.inferenceTimeMs = inferenceTime;
         metadata.device = deviceUsed;
 
-        // Set metadata first to mount the workspace
         setActiveMetadata(metadata);
 
-        // Load the cutout image object
         const cutout = new Image();
         cutout.onload = () => {
           setCutoutImage(cutout);
@@ -234,16 +388,18 @@ export const App: React.FC = () => {
     setActiveMetadata(null);
     setOriginalImage(null);
     setCutoutImage(null);
+    setCropRect(null);
     resetHistory();
     setZoom(1.0);
     setIsSplitView(false);
     setShowOriginal(false);
+    setCurrentTool('magic-erase');
   };
 
   const handleZoomFit = () => {
     if (!cutoutImage) return;
-    const availableWidth = window.innerWidth - 340;
-    const availableHeight = window.innerHeight - 140;
+    const availableWidth = window.innerWidth - 300;
+    const availableHeight = window.innerHeight - 110;
     const scaleX = availableWidth / cutoutImage.naturalWidth;
     const scaleY = availableHeight / cutoutImage.naturalHeight;
     const fit = Math.min(scaleX, scaleY, 1.0);
@@ -251,32 +407,30 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#090a0f] text-zinc-100 overflow-hidden font-sans">
-      {/* 1. Window Chrome TitleBar */}
+    <div className="h-screen w-screen flex flex-col bg-[#0f1012] text-zinc-100 overflow-hidden font-sans select-none">
+      {/* 1. Minimal Window Chrome TitleBar */}
       <TitleBar hardwareInfo={hardwareInfo} daemonHealthy={daemonHealthy} />
 
-      {/* Processing Loading Overlay */}
+      {/* Clean 2D Processing Loading Indicator */}
       {isProcessing && (
-        <div className="absolute inset-0 z-50 bg-[#090a0f]/85 backdrop-blur-sm flex flex-col items-center justify-center space-y-4">
-          <div className="relative">
-            <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-          </div>
-          <div className="text-center space-y-1">
-            <p className="text-sm font-medium text-zinc-100 tracking-wide">
-              Processing Background Removal...
+        <div className="absolute inset-0 z-50 bg-[#0f1012]/80 flex flex-col items-center justify-center space-y-3">
+          <div className="w-8 h-8 rounded-full border-2 border-zinc-600 border-t-zinc-200 animate-spin" />
+          <div className="text-center space-y-0.5">
+            <p className="text-xs font-medium text-zinc-200 tracking-tight">
+              Removing Background...
             </p>
-            <p className="text-xs text-zinc-400 font-mono">
-              Running ONNX Rembg ({hardwareInfo?.accelerator || 'Local CPU/GPU Engine'})
+            <p className="text-[11px] text-zinc-500 font-mono">
+              {hardwareInfo?.accelerator || 'Local Engine'}
             </p>
           </div>
         </div>
       )}
 
-      {/* Error Notification Banner */}
+      {/* Error Banner */}
       {processingError && (
-        <div className="bg-red-500/15 border-b border-red-500/30 px-4 py-2 flex items-center justify-between text-xs text-red-300">
+        <div className="bg-[#1e1515] border-b border-red-900/40 px-4 py-2 flex items-center justify-between text-xs text-red-300">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span>{processingError}</span>
           </div>
           <button
@@ -288,7 +442,7 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Main Workspace */}
       {!activeMetadata ? (
         <DropZone
           onImageSelected={handleImageSelected}
@@ -319,6 +473,13 @@ export const App: React.FC = () => {
               onContiguousChange={setContiguous}
               brushSize={brushSize}
               onBrushSizeChange={setBrushSize}
+              cropAspectRatio={cropAspectRatio}
+              onCropAspectRatioChange={setCropAspectRatio}
+              onApplyCrop={handleApplyCrop}
+              onCancelCrop={handleCancelCrop}
+              onRotateClockwise={handleRotateClockwise}
+              onFlipHorizontal={handleFlipHorizontal}
+              onFlipVertical={handleFlipVertical}
               zoom={zoom}
               onZoomIn={() => setZoom((z) => Math.min(z * 1.25, 8.0))}
               onZoomOut={() => setZoom((z) => Math.max(z * 0.8, 0.05))}
@@ -348,6 +509,9 @@ export const App: React.FC = () => {
               tolerance={tolerance}
               contiguous={contiguous}
               brushSize={brushSize}
+              cropAspectRatio={cropAspectRatio}
+              cropRect={cropRect}
+              onCropRectChange={setCropRect}
               zoom={zoom}
               onZoomChange={setZoom}
               previewBackground={previewBg}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Zap, WifiOff, HardDrive, CheckCircle2 } from 'lucide-react';
+import { Cpu, Zap, WifiOff } from 'lucide-react';
 import { HardwareInfo } from '../types';
 
 interface SystemStatusProps {
@@ -16,54 +16,54 @@ export const SystemStatus: React.FC<SystemStatusProps> = ({
   const isCuda = hardwareInfo?.accelerator?.toLowerCase().includes('cuda');
 
   return (
-    <footer className="h-7 w-full bg-[#0d0f17] border-t border-[#262a36] px-3 flex items-center justify-between text-[11px] font-mono text-zinc-500 select-none z-30">
+    <footer className="h-6 w-full bg-[#0f1012] border-t border-[#27272a] px-3 flex items-center justify-between text-[11px] font-mono text-zinc-500 select-none z-30">
       {/* Left: Device & Daemon state */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3.5">
         <div className="flex items-center gap-1.5">
           <span
-            className={`w-2 h-2 rounded-full ${
-              daemonHealthy ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
+            className={`w-1.5 h-1.5 rounded-full ${
+              daemonHealthy ? 'bg-emerald-500' : 'bg-amber-500'
             }`}
           />
           <span className="text-zinc-300">
-            {daemonHealthy ? 'Daemon Active' : 'Daemon Connecting'}
+            {daemonHealthy ? 'Daemon Active' : 'Connecting'}
           </span>
         </div>
 
         {hardwareInfo && (
-          <div className="hidden sm:flex items-center gap-1 text-zinc-400">
-            {isCuda ? <Zap className="w-3 h-3 text-emerald-400" /> : <Cpu className="w-3 h-3 text-zinc-400" />}
-            <span className={isCuda ? 'text-emerald-400 font-semibold' : ''}>
+          <div className="hidden sm:flex items-center gap-1.5 text-zinc-400">
+            {isCuda ? <Zap className="w-2.5 h-2.5 text-emerald-400" /> : <Cpu className="w-2.5 h-2.5 text-zinc-400" />}
+            <span className={isCuda ? 'text-emerald-400 font-medium' : ''}>
               {hardwareInfo.accelerator}
             </span>
-            <span className="text-zinc-600">|</span>
+            <span className="text-zinc-700">/</span>
             <span>{hardwareInfo.cpu_cores} Cores</span>
-            <span className="text-zinc-600">|</span>
-            <span>{hardwareInfo.ram_available_gb}GB Free</span>
+            <span className="text-zinc-700">/</span>
+            <span>{hardwareInfo.ram_available_gb} GB Free</span>
           </div>
         )}
 
         {isProcessing && (
-          <div className="flex items-center gap-1.5 text-blue-400 animate-pulse">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
-            <span>AI Inference executing...</span>
+          <div className="flex items-center gap-1.5 text-zinc-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+            <span>Processing inference...</span>
           </div>
         )}
       </div>
 
       {/* Right: Offline badge & Shortcuts */}
       <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 text-zinc-500">
-          <span>Ctrl+Z: Undo</span>
+        <div className="hidden md:flex items-center gap-2 text-zinc-500 text-[10px]">
+          <span>Ctrl+Z Undo</span>
           <span>•</span>
-          <span>Space+Drag: Pan</span>
+          <span>Space Pan</span>
           <span>•</span>
-          <span>Scroll: Zoom</span>
+          <span>Enter Apply Crop</span>
         </div>
 
         <div className="flex items-center gap-1 text-zinc-400">
-          <WifiOff className="w-3 h-3 text-emerald-400" />
-          <span className="text-[10px]">100% Offline</span>
+          <WifiOff className="w-2.5 h-2.5 text-zinc-400" />
+          <span className="text-[10px]">Offline</span>
         </div>
       </div>
     </footer>
