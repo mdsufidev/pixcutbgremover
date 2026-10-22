@@ -14,9 +14,21 @@ A production-grade, standalone desktop workstation application for high-performa
 
 ---
 
-## Key Features
+## 🚀 Quick Download & Install (Zero Setup Needed)
 
-- **100% Offline & Zero Friction**: No sign-ups, API keys, or internet connection required. All neural inference runs directly on your local CPU or GPU.
+Anyone can download and run PixCut Desktop directly on Windows without deploying or setting up servers:
+
+| Package Type | File Name | Description |
+| :--- | :--- | :--- |
+| **Windows Setup Installer (.exe)** | [`release/PixCut Desktop Setup 1.0.0.exe`](release/PixCut%20Desktop%20Setup%201.0.0.exe) | **Recommended**: Double-click to install. Creates Desktop and Start Menu shortcuts automatically. |
+| **Windows Portable (.zip)** | [`release/PixCut-Desktop-Portable-x64.zip`](release/PixCut-Desktop-Portable-x64.zip) | Extract anywhere and double-click `PixCut Desktop.exe` to run immediately without installation. |
+| **Standalone Daemon (.exe)** | [`resources/backend-dist/pixcut-ai-daemon/pixcut-ai-daemon.exe`](resources/backend-dist/pixcut-ai-daemon/pixcut-ai-daemon.exe) | Embedded AI Neural Engine daemon powered by PyInstaller & rembg. |
+
+---
+
+## ✨ Key Features
+
+- **100% Offline & Zero Friction**: No accounts, sign-ups, API keys, or internet connection required. All neural inference runs directly on your local CPU or GPU.
 - **Hardware-Aware Neural Engine**: Inspects local hardware capabilities. Automatically activates **NVIDIA CUDA** (`CUDAExecutionProvider`) when available and gracefully falls back to multi-threaded **CPU** (`CPUExecutionProvider`) with zero crashes.
 - **Interactive Before / After Split Slider**: Real-time draggable split comparison curtain to inspect edge cutouts against the original high-resolution photo.
 - **"Magic Erase / Color Click" BFS Flood-Fill**: Instant contiguous and global color removal with adjustable color Euclidean distance tolerance ($0\text{--}100\%$).
@@ -27,7 +39,7 @@ A production-grade, standalone desktop workstation application for high-performa
 
 ---
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
 ```
 pixcut-bgremover/
@@ -58,11 +70,10 @@ pixcut-bgremover/
 │   ├── requirements.txt     # Python dependencies
 │   └── build_daemon.spec    # PyInstaller spec for standalone .exe / Linux binary
 │
-├── resources/
-│   └── backend-dist/        # Pre-compiled standalone Python AI Daemon (pixcut-ai-daemon.exe)
-│
 ├── release/
-│   └── win-unpacked/        # Standalone Windows Desktop Application (PixCut Desktop.exe)
+│   ├── PixCut Desktop Setup 1.0.0.exe  # Standalone Windows Installer
+│   ├── PixCut-Desktop-Portable-x64.zip # Standalone Portable Zip Package
+│   └── win-unpacked/                   # Unpacked portable executable folder
 │
 ├── PixCut-Direct-Run.bat    # 1-Click launcher for local development / testing
 └── PixCut-Build-Standalone-EXE.bat # 1-Click compiler for Windows .exe package
@@ -70,35 +81,7 @@ pixcut-bgremover/
 
 ---
 
-## Included Standalone Executables
-
-This repository includes pre-built standalone binaries ready to run directly on Windows:
-
-| Executable | Location | Purpose |
-| :--- | :--- | :--- |
-| **PixCut Desktop.exe** | [`release/win-unpacked/PixCut Desktop.exe`](release/win-unpacked/PixCut%20Desktop.exe) | Complete native standalone desktop app (Electron shell + React workspace) |
-| **pixcut-ai-daemon.exe** | [`resources/backend-dist/pixcut-ai-daemon/pixcut-ai-daemon.exe`](resources/backend-dist/pixcut-ai-daemon/pixcut-ai-daemon.exe) | Embedded AI Neural Engine daemon powered by PyInstaller & rembg |
-
----
-
-## Direct PC Run (No Cloud Deployment Needed)
-
-### Method 1: Double-Click the Executable
-Open the folder and launch:
-```
-release\win-unpacked\PixCut Desktop.exe
-```
-The application will launch the local loopback AI daemon automatically and open the clean desktop window.
-
-### Method 2: Double-Click the 1-Click Launcher
-Double-click:
-```
-PixCut-Direct-Run.bat
-```
-
----
-
-## Developer Guide & Building from Source
+## 💻 Developer Guide & Building from Source
 
 ### Prerequisites
 - Node.js (v18 or higher)
@@ -123,19 +106,19 @@ npm run dev
 npm start
 ```
 
-### Step 3: Compile Standalone Executables
+### Step 3: Build Standalone Installer & Portable Zip
 ```bash
-# 1. Compile the Python AI daemon into a standalone executable:
+# 1. Compile the Python AI daemon executable:
 npm run py:build
 
-# 2. Package the Electron Windows desktop application:
+# 2. Package the Windows Installer (.exe):
 npm run pack:win
 ```
-The standalone binary will be generated in `release/win-unpacked/PixCut Desktop.exe`.
+The installer will be generated in `release/PixCut Desktop Setup 1.0.0.exe`.
 
 ---
 
-## Keyboard Shortcuts
+## ⌨️ Keyboard Shortcuts
 
 | Shortcut | Action |
 | :--- | :--- |
@@ -147,6 +130,6 @@ The standalone binary will be generated in `release/win-unpacked/PixCut Desktop.
 
 ---
 
-## License
+## 📄 License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more details.

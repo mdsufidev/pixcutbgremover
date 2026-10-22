@@ -20,21 +20,46 @@ async function createWindow() {
       contextIsolation: true,
       sandbox: false,
     },
-    show: false, // Show gracefully once ready-to-show
+    show: false,
   });
 
   const isDev = !app.isPackaged;
 
   if (isDev) {
-    await mainWindow.loadURL('http://localhost:5173');
-    // mainWindow.webContents.openDevTools();
+    try {
+      await mainWindow.loadURL('http://localhost:5173');
+    } catch {
+      // In case vite dev server isn't running, load dist file
+      const distPath = path.join(__dirname, '../dist/index.html');
+      if (fs.existsSync(distPath)) {
+        await mainWindow.loadFile(distPath);
+      }
+    }
   } else {
-    await mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const prodPath = path.join(__dirname, '../dist/index.html');
+    const altPath = path.join(__dirname, 'index.html');
+    if (fs.existsSync(prodPath)) {
+      await mainWindow.loadFile(prodPath);
+    } else if (fs.existsSync(altPath)) {
+      await mainWindow.loadFile(altPath);
+    } else {
+      console.error('Cannot locate index.html');
+    }
   }
 
+  // Ensure window is shown immediately
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
+    mainWindow?.focus();
   });
+
+  // Safety fallback: if ready-to-show is delayed, show window anyway after 500ms
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  }, 500);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -128,9 +153,14 @@ ipcMain.handle('file-save', async (_event, filePath: string, arrayBuffer: ArrayB
 
 // App Lifecycle
 app.whenReady().then(async () => {
-  console.log('[PixCut Main] Starting background AI daemon...');
-  await daemon.start();
+  // 1. Show the desktop window IMMEDIATELY so user gets instant visual feedback
   await createWindow();
+
+  // 2. Start the local loopback AI daemon in the background
+  console.log('[PixCut Main] Starting background AI daemon...');
+  daemon.start().catch((err) => {
+    console.warn('[PixCut Main] Daemon start warning:', err);
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

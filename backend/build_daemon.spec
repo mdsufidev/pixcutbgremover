@@ -10,7 +10,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules, coll
 
 block_cipher = None
 
-# Collect all dynamic libraries and assets for onnxruntime and rembg
+# Collect all dynamic libraries and assets
 onnx_binaries = collect_dynamic_libs('onnxruntime')
 rembg_datas = collect_data_files('rembg')
 fastapi_datas = collect_data_files('fastapi')
@@ -25,14 +25,21 @@ hidden_imports = [
     'uvicorn.protocols.http.auto',
     'uvicorn.protocols.websockets',
     'uvicorn.protocols.websockets.auto',
-    'uvicorn.lifespans',
-    'uvicorn.lifespans.on',
+    'uvicorn.lifespan',
+    'uvicorn.lifespan.on',
+    'uvicorn.lifespan.off',
     'rembg',
+    'rembg.bg',
+    'rembg.session_factory',
+    'rembg.sessions',
+    'rembg.sessions.base',
+    'rembg.sessions.u2net',
+    'filetype',
     'onnxruntime',
     'PIL',
     'PIL.Image',
     'psutil'
-] + collect_submodules('uvicorn') + collect_submodules('fastapi')
+] + collect_submodules('rembg') + collect_submodules('uvicorn') + collect_submodules('fastapi')
 
 a = Analysis(
     ['main.py'],
@@ -62,7 +69,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False, # Set to True if console debugging is desired
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
