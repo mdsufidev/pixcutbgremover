@@ -13,7 +13,12 @@ export const SystemStatus: React.FC<SystemStatusProps> = ({
   daemonHealthy,
   isProcessing,
 }) => {
-  const isCuda = hardwareInfo?.accelerator?.toLowerCase().includes('cuda');
+  const isGpu = Boolean(
+    hardwareInfo?.accelerator?.toLowerCase().includes('cuda') ||
+    hardwareInfo?.accelerator?.toLowerCase().includes('gpu') ||
+    hardwareInfo?.accelerator?.toLowerCase().includes('directml') ||
+    hardwareInfo?.accelerator?.toLowerCase().includes('dml')
+  );
 
   return (
     <footer className="h-6 w-full bg-[#0f1012] border-t border-[#27272a] px-3 flex items-center justify-between text-[11px] font-mono text-zinc-500 select-none z-30">
@@ -32,8 +37,8 @@ export const SystemStatus: React.FC<SystemStatusProps> = ({
 
         {hardwareInfo && (
           <div className="hidden sm:flex items-center gap-1.5 text-zinc-400">
-            {isCuda ? <Zap className="w-2.5 h-2.5 text-emerald-400" /> : <Cpu className="w-2.5 h-2.5 text-zinc-400" />}
-            <span className={isCuda ? 'text-emerald-400 font-medium' : ''}>
+            {isGpu ? <Zap className="w-2.5 h-2.5 text-emerald-400" /> : <Cpu className="w-2.5 h-2.5 text-zinc-400" />}
+            <span className={isGpu ? 'text-emerald-400 font-medium' : ''}>
               {hardwareInfo.accelerator}
             </span>
             <span className="text-zinc-700">/</span>

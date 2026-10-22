@@ -19,9 +19,40 @@ class BackgroundRemovalEngine:
         self.session = None
         self._initialize_session()
 
+    def _detect_gpu_name(self) -> Optional[str]:
+        """
+        Detects primary GPU model name via Windows WMI/CIM or Linux lspci.
+        """
+        try:
+            import platform, subprocess
+            if platform.system() == "Windows":
+                cmd = ["powershell", "-NoProfile", "-NonInteractive", "-Command", 
+                       "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name"]
+                out = subprocess.check_output(cmd, timeout=3, text=True, stderr=subprocess.DEVNULL)
+                lines = [l.strip() for l in out.strip().splitlines() if l.strip()]
+                # Prefer discrete GPUs (NVIDIA, AMD Radeon, Intel Arc) over integrated
+                for l in lines:
+                    if any(k in l.lower() for k in ["nvidia", "geforce", "rtx", "gtx"]):
+                        return l
+                for l in lines:
+                    if any(k in l.lower() for k in ["radeon", "arc"]):
+                        return l
+                if lines:
+                    return lines[0]
+            elif platform.system() == "Linux":
+                out = subprocess.check_output(["lspci"], timeout=3, text=True, stderr=subprocess.DEVNULL)
+                for line in out.splitlines():
+                    if "VGA" in line or "3D" in line:
+                        return line.split(":")[-1].strip()
+        except Exception:
+            pass
+        return None
+
     def _detect_providers(self) -> Tuple[list, str]:
         """
         Determines the best candidate ONNX Runtime execution providers to request.
+        DirectML provides out-of-the-box hardware GPU acceleration for NVIDIA, AMD,
+        and Intel GPUs on Windows without requiring separate CUDA installations.
         """
         try:
             import onnxruntime as ort
@@ -29,10 +60,10 @@ class BackgroundRemovalEngine:
             logger.info(f"Available ONNX Runtime providers: {available}")
             
             candidates = []
-            if "CUDAExecutionProvider" in available:
-                candidates.append("CUDAExecutionProvider")
             if "DmlExecutionProvider" in available:
                 candidates.append("DmlExecutionProvider")
+            if "CUDAExecutionProvider" in available:
+                candidates.append("CUDAExecutionProvider")
             if "CoreMLExecutionProvider" in available:
                 candidates.append("CoreMLExecutionProvider")
             candidates.append("CPUExecutionProvider")
@@ -54,10 +85,11 @@ class BackgroundRemovalEngine:
             if inner and hasattr(inner, "get_providers"):
                 active = inner.get_providers()
                 logger.info(f"Active runtime providers bound to session: {active}")
+                gpu_name = self._detect_gpu_name()
                 if "CUDAExecutionProvider" in active:
-                    return "CUDA (NVIDIA GPU)"
+                    return f"CUDA ({gpu_name})" if gpu_name else "CUDA (NVIDIA GPU)"
                 elif "DmlExecutionProvider" in active:
-                    return "DirectML (GPU)"
+                    return f"GPU ({gpu_name})" if gpu_name else "GPU (DirectML)"
                 elif "CoreMLExecutionProvider" in active:
                     return "CoreML (Apple Silicon)"
                 elif "CPUExecutionProvider" in active:

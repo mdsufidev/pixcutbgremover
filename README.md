@@ -34,7 +34,7 @@ Anyone can download and run PixCut Desktop directly on Windows without deploying
 ## ✨ Key Features
 
 - **100% Offline & Zero Friction**: No accounts, sign-ups, API keys, or internet connection required. All neural inference runs directly on your local CPU or GPU.
-- **Hardware-Aware Neural Engine**: Inspects local hardware capabilities. Automatically activates **NVIDIA CUDA** (`CUDAExecutionProvider`) when available and gracefully falls back to multi-threaded **CPU** (`CPUExecutionProvider`) with zero crashes.
+- **Built-in Zero-Setup GPU Acceleration**: Bundles Microsoft DirectML (`DirectML.dll`) directly inside the application installer. Automatically detects and powers neural inference on **NVIDIA GeForce / RTX, AMD Radeon, and Intel Arc GPUs** out of the box with zero external CUDA Toolkit installations required, with graceful fallback to multi-threaded CPU.
 - **Ultra-Fast Inference & Model Pre-Warming**: Daemon warms ONNX session thread pools during startup and utilizes optimized compression (`compress_level=1`) to eliminate cold-start lag and deliver cutouts 3x-5x faster.
 - **Advanced Image Cropper & Transform Suite**: Built-in interactive cropper with 8 draggable handles, rule-of-thirds alignment grid, live dimension badge, aspect ratio presets (`Freeform`, `1:1 Square`, `16:9 Landscape`, `4:3 Standard`, `3:2 Classic`, `9:16 Story/Reel`), 90° clockwise rotation, and horizontal/vertical flipping.
 - **Interactive Before / After Split Slider**: Real-time draggable split comparison curtain to inspect edge cutouts against the original high-resolution photo.

@@ -27,7 +27,12 @@ export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy 
   };
   const handleClose = () => window.electronAPI?.close();
 
-  const isCuda = hardwareInfo?.accelerator?.toLowerCase().includes('cuda');
+  const isGpu = Boolean(
+    hardwareInfo?.accelerator?.toLowerCase().includes('cuda') ||
+    hardwareInfo?.accelerator?.toLowerCase().includes('gpu') ||
+    hardwareInfo?.accelerator?.toLowerCase().includes('directml') ||
+    hardwareInfo?.accelerator?.toLowerCase().includes('dml')
+  );
 
   return (
     <header className="h-9 w-full bg-[#0f1012] border-b border-[#27272a] flex items-center justify-between px-3 select-none app-drag-region z-50">
@@ -49,12 +54,12 @@ export const TitleBar: React.FC<TitleBarProps> = ({ hardwareInfo, daemonHealthy 
         <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#18181b] border border-[#27272a] text-[11px]">
           <span
             className={`w-1.5 h-1.5 rounded-full ${
-              daemonHealthy ? (isCuda ? 'bg-emerald-500' : 'bg-zinc-300') : 'bg-amber-500'
+              daemonHealthy ? (isGpu ? 'bg-emerald-500' : 'bg-zinc-300') : 'bg-amber-500'
             }`}
           />
           <div className="flex items-center gap-1 text-zinc-400 font-mono text-[10px]">
-            {isCuda ? <Zap className="w-2.5 h-2.5 text-emerald-400" /> : <Cpu className="w-2.5 h-2.5 text-zinc-400" />}
-            <span>
+            {isGpu ? <Zap className="w-2.5 h-2.5 text-emerald-400" /> : <Cpu className="w-2.5 h-2.5 text-zinc-400" />}
+            <span className={isGpu ? 'text-emerald-400 font-medium' : ''}>
               {hardwareInfo ? hardwareInfo.accelerator : daemonHealthy ? 'Ready' : 'Connecting daemon...'}
             </span>
           </div>

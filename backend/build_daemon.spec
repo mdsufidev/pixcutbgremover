@@ -50,6 +50,8 @@ hidden_imports = [
     'tqdm',
     'jsonschema',
     'unittest',
+    'sympy',
+    'mpmath',
 ] + collect_submodules('rembg') + collect_submodules('uvicorn') + collect_submodules('fastapi') + collect_submodules('pymatting')
 
 a = Analysis(
