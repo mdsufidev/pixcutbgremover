@@ -320,12 +320,14 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Split comparison slider dragging
-    if (isDraggingSplit && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const relativeX = e.clientX - rect.left;
-      const pct = Math.max(0, Math.min(100, (relativeX / rect.width) * 100));
-      setSplitPos(pct);
+    // Split comparison slider dragging (relative to the active image canvas)
+    if (isDraggingSplit) {
+      const targetRect = canvasRef.current ? canvasRef.current.getBoundingClientRect() : containerRef.current?.getBoundingClientRect();
+      if (targetRect && targetRect.width > 0) {
+        const relativeX = e.clientX - targetRect.left;
+        const pct = Math.max(0, Math.min(100, (relativeX / targetRect.width) * 100));
+        setSplitPos(pct);
+      }
       return;
     }
 
@@ -439,11 +441,11 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         handleMouseUp();
         setCursorPos(null);
       }}
-      className={`flex-1 relative overflow-hidden select-none bg-[#0f1012] ${cursorClass}`}
+      className={`flex-1 relative overflow-hidden select-none bg-[#F4F5F7] ${cursorClass}`}
     >
       {/* Canvas Viewport Surface */}
       <div
-        className="absolute transition-transform duration-75 origin-top-left"
+        className="absolute transition-transform duration-75 origin-top-left shadow-md ring-1 ring-black/5"
         style={{
           transform: `translate3d(${pan.x}px, ${pan.y}px, 0px) scale(${zoom})`,
           width: canvasWidth,
@@ -599,24 +601,24 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             </div>
           </div>
         )}
-      </div>
 
-      {/* Interactive Split Bar Overlay Handle */}
-      {isSplitView && (
-        <div
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            setIsDraggingSplit(true);
-          }}
-          className="absolute top-0 bottom-0 z-30 cursor-ew-resize flex items-center justify-center group"
-          style={{ left: `${splitPos}%`, transform: 'translateX(-50%)' }}
-        >
-          <div className="w-[1px] h-full bg-white/70" />
-          <div className="w-5 h-5 rounded-full bg-zinc-900 border border-zinc-400 text-white flex items-center justify-center absolute shadow-sm text-[10px] font-mono">
-            ↔
+        {/* Interactive Split Bar Overlay Handle locked directly to Canvas */}
+        {isSplitView && (
+          <div
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              setIsDraggingSplit(true);
+            }}
+            className="absolute top-0 bottom-0 z-30 cursor-ew-resize flex items-center justify-center group pointer-events-auto"
+            style={{ left: `${splitPos}%`, transform: 'translateX(-50%)' }}
+          >
+            <div className="w-[2px] h-full bg-emerald-600 shadow-sm" />
+            <div className="w-6 h-6 rounded-full bg-white border-2 border-emerald-600 text-emerald-700 flex items-center justify-center absolute shadow-md text-[11px] font-mono select-none">
+              ↔
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Precision Circular Brush Cursor Indicator */}
       {cursorPos && (currentTool === 'brush-erase' || currentTool === 'restore-brush') && (

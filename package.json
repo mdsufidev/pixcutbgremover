@@ -1,7 +1,7 @@
 {
-  "name": "pixcut-desktop",
+  "name": "filewala-tool",
   "version": "1.0.0",
-  "description": "High-Performance Standalone Desktop Background Remover powered by React and local rembg AI engine",
+  "description": "FileWala TOOL - High-Performance Standalone Desktop AI Background Remover & Face Enhancer",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev:vite": "vite",
@@ -16,8 +16,8 @@
     "py:build": "pyinstaller backend/build_daemon.spec --noconfirm --distpath resources/backend-dist"
   },
   "build": {
-    "appId": "com.pixcut.desktop",
-    "productName": "PixCutBg Desktop",
+    "appId": "com.filewalatool.desktop",
+    "productName": "FileWala TOOL",
     "directories": {
       "output": "release"
     },
@@ -32,6 +32,10 @@
         "from": "resources/icons",
         "to": "icons",
         "filter": ["**/*"]
+      },
+      {
+        "from": "scripts/installer-setup.ps1",
+        "to": "installer-setup.ps1"
       }
     ],
     "afterPack": "scripts/set-icon.js",
@@ -47,7 +51,8 @@
       "createStartMenuShortcut": true,
       "installerIcon": "resources/icons/icon.ico",
       "uninstallerIcon": "resources/icons/icon.ico",
-      "artifactName": "PixCutBg-Desktop-Setup-${version}.${ext}"
+      "artifactName": "FileWala-TOOL-Setup-${version}.${ext}",
+      "include": "build/installer.nsh"
     },
     "linux": {
       "target": ["AppImage", "tar.gz"],

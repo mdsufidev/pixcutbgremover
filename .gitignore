@@ -24,6 +24,17 @@ ENV/
 release/win-unpacked/
 resources/backend-dist/_internal/
 
+# AI models & offline enhancer packages (downloaded on demand / GitHub releases)
+resources/enhancer/
+pixcut-enhancer-vulkan.zip
+release/pixcut-enhancer-vulkan.zip
+release/PixCutBg-Desktop-Setup-1.0.0.exe*
+
+# Runtime config & temporary files
+backend/config.json
+backend/config.json.tmp*
+*.tmp*
+
 # OS files
 Thumbs.db
 Desktop.ini

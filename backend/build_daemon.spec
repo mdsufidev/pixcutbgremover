@@ -12,6 +12,7 @@ block_cipher = None
 
 # Collect all dynamic libraries and assets
 onnx_binaries = collect_dynamic_libs('onnxruntime')
+cv2_binaries = collect_dynamic_libs('cv2')
 rembg_datas = collect_data_files('rembg')
 fastapi_datas = collect_data_files('fastapi')
 uvicorn_datas = collect_data_files('uvicorn')
@@ -36,6 +37,22 @@ hidden_imports = [
     'rembg.sessions.u2net',
     'filetype',
     'onnxruntime',
+    'cv2',
+    'core',
+    'core.hardware',
+    'core.image_utils',
+    'core.responses',
+    'core.system_utils',
+    'backend.core',
+    'backend.core.hardware',
+    'backend.core.image_utils',
+    'backend.core.responses',
+    'backend.core.system_utils',
+    'hybrid_face_enhancer',
+    'enhancer',
+    'engine',
+    'downloader',
+    'service',
     'PIL',
     'PIL.Image',
     'psutil',
@@ -52,12 +69,12 @@ hidden_imports = [
     'unittest',
     'sympy',
     'mpmath',
-] + collect_submodules('rembg') + collect_submodules('uvicorn') + collect_submodules('fastapi') + collect_submodules('pymatting')
+] + collect_submodules('rembg') + collect_submodules('uvicorn') + collect_submodules('fastapi') + collect_submodules('pymatting') + collect_submodules('cv2')
 
 a = Analysis(
     ['main.py'],
     pathex=['.'],
-    binaries=onnx_binaries,
+    binaries=onnx_binaries + cv2_binaries,
     datas=rembg_datas + fastapi_datas + uvicorn_datas,
     hiddenimports=hidden_imports,
     hookspath=[],

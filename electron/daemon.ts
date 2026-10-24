@@ -38,7 +38,9 @@ export class DaemonManager {
     const candidatePaths = [
       // 1. Downloaded to userData backend directory (on-demand install)
       userDataDir ? path.join(userDataDir, 'backend', binaryName) : '',
+      process.env.APPDATA ? path.join(process.env.APPDATA, 'FileWalaTool', 'backend', binaryName) : '',
       process.env.APPDATA ? path.join(process.env.APPDATA, 'PixCutBg', 'backend', binaryName) : '',
+      process.env.APPDATA ? path.join(process.env.APPDATA, 'pixcut-desktop', 'backend', binaryName) : '',
       // 2. Bundled in resources or dev tree
       path.join(rootDir, 'backend-dist', binaryName),
       path.join(rootDir, 'backend-dist', 'pixcut-ai-daemon', binaryName),
@@ -83,6 +85,7 @@ export class DaemonManager {
             detached: false,
             cwd: path.dirname(foundExecutable),
             stdio: 'ignore',
+            windowsHide: true,
           }
         );
       } catch (err) {
@@ -102,6 +105,7 @@ export class DaemonManager {
             {
               cwd: projectRoot,
               shell: true,
+              windowsHide: true,
               env: { ...process.env, PYTHONUNBUFFERED: '1' },
             }
           );

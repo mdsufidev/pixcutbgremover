@@ -32,7 +32,7 @@ async function createWindow() {
   }
 
   mainWindow = new BrowserWindow({
-    title: 'PixCutBg Desktop',
+    title: 'FileWala TOOL',
     icon: windowIcon,
     width: 1280,
     height: 840,
@@ -224,7 +224,7 @@ ipcMain.handle('restart-backend', async () => {
 app.whenReady().then(async () => {
   // CRITICAL FOR WINDOWS TASKBAR: Set application ID so Windows groups taskbar items and shows custom icon
   if (process.platform === 'win32') {
-    app.setAppUserModelId('com.pixcut.desktop');
+    app.setAppUserModelId('com.filewala.tool');
   }
 
   // 1. Show the desktop window IMMEDIATELY so user gets instant visual feedback

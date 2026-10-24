@@ -8,7 +8,6 @@ import {
   Zap,
   ShieldCheck,
   RefreshCw,
-  ExternalLink
 } from 'lucide-react';
 
 interface BackendSetupModalProps {
@@ -80,103 +79,101 @@ export const BackendSetupModal: React.FC<BackendSetupModalProps> = ({
         setIsDownloading(false);
         setIsStartingEngine(true);
 
-        // Wait a brief moment for local daemon health check to register
+        const checkInterval = setInterval(async () => {
+          if (!window.electronAPI?.checkBackendInstalled) return;
+          const status = await window.electronAPI.checkBackendInstalled();
+          if (status.installed) {
+            clearInterval(checkInterval);
+            setIsStartingEngine(false);
+            onSuccess();
+          }
+        }, 1500);
+
         setTimeout(() => {
+          clearInterval(checkInterval);
           setIsStartingEngine(false);
           onSuccess();
-        }, 1500);
+        }, 10000);
       } else {
         setIsDownloading(false);
-        setErrorMessage(res.error || 'Failed to download AI backend from GitHub.');
+        setErrorMessage(res.error || 'Failed to download backend daemon');
       }
     } catch (err: any) {
       setIsDownloading(false);
-      setErrorMessage(err.message || 'Network error while downloading backend.');
+      setErrorMessage(err.message || 'Network download error');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none">
-      <div
-        className="w-full max-w-lg bg-[#141517] border border-[#27272a] rounded-lg shadow-2xl overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="h-12 px-5 border-b border-[#27272a] flex items-center justify-between bg-[#0f1012]">
-          <div className="flex items-center gap-2.5">
-            <Server className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-sm font-semibold text-zinc-100">Setup AI Background Engine</h2>
+    <div className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-xl max-w-md w-full p-6 text-gray-900 space-y-5">
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shadow-xs">
+            <Server className="w-7 h-7" />
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-            One-Time Setup
-          </span>
-        </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-5">
-          {/* Explanation */}
-          <div className="space-y-2">
-            <h3 className="text-base font-medium text-zinc-100 tracking-tight">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">
               Download Local AI Daemon
             </h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
               To keep your desktop app installer ultra-compact (~60 MB), the AI background remover engine (FastAPI + ONNX Runtime) is downloaded directly from GitHub on first launch.
             </p>
           </div>
 
           {/* Feature Highlights */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 bg-[#18191c] border border-[#27272a] rounded flex items-center gap-2 text-zinc-300">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="grid grid-cols-2 gap-2 text-xs w-full pt-1">
+            <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-2 text-gray-700">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>100% Private & Local</span>
             </div>
-            <div className="p-2.5 bg-[#18191c] border border-[#27272a] rounded flex items-center gap-2 text-zinc-300">
-              <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>DirectML GPU Acceleration</span>
+            <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-2 text-gray-700">
+              <Zap className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>DirectML GPU Speed</span>
             </div>
           </div>
 
           {/* Progress / Status Display */}
           {isDownloading ? (
-            <div className="space-y-3 p-4 bg-[#0f1012] border border-[#27272a] rounded-md">
+            <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-xl w-full text-left">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-300 font-medium flex items-center gap-2">
-                  <DownloadCloud className="w-3.5 h-3.5 text-blue-400 animate-bounce" />
+                <span className="text-gray-700 font-medium flex items-center gap-2">
+                  <DownloadCloud className="w-3.5 h-3.5 text-emerald-600 animate-bounce" />
                   <span>Downloading pixcut-ai-daemon.exe...</span>
                 </span>
-                <span className="font-mono text-emerald-400 font-semibold">
+                <span className="font-mono text-emerald-700 font-semibold">
                   {downloadProgress.percent}%
                 </span>
               </div>
 
               {/* Progress bar */}
-              <div className="w-full h-2 bg-[#27272a] rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-500 transition-all duration-200 rounded-full"
+                  className="h-full bg-emerald-600 transition-all duration-200 rounded-full"
                   style={{ width: `${Math.min(100, Math.max(1, downloadProgress.percent))}%` }}
                 />
               </div>
 
-              <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500">
+              <div className="flex items-center justify-between text-[11px] font-mono text-gray-500">
                 <span>
                   {downloadProgress.downloadedMB} MB / {downloadProgress.totalMB || 308} MB
                 </span>
                 {downloadProgress.speedMBs > 0 && (
-                  <span className="text-zinc-400">{downloadProgress.speedMBs} MB/s</span>
+                  <span className="text-gray-600">{downloadProgress.speedMBs} MB/s</span>
                 )}
               </div>
             </div>
           ) : isStartingEngine ? (
-            <div className="p-4 bg-[#0f1012] border border-[#27272a] rounded-md flex items-center justify-center gap-3 text-xs text-zinc-300">
-              <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
-              <span>Starting background AI engine & verifying health...</span>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center gap-3 text-xs text-gray-700 w-full">
+              <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
+              <span>Starting local AI engine & verifying health...</span>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 w-full">
               <button
                 type="button"
                 onClick={handleStartDownload}
-                className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs rounded transition-colors duration-150 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl transition-colors duration-150 flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 <DownloadCloud className="w-4 h-4 stroke-[2.5]" />
                 <span>
@@ -188,18 +185,16 @@ export const BackendSetupModal: React.FC<BackendSetupModalProps> = ({
             </div>
           )}
 
-          {/* Error display */}
           {errorMessage && (
-            <div className="p-3 bg-red-950/40 border border-red-500/40 rounded-md text-xs text-red-300 space-y-2">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-                <span className="font-semibold">Setup Encountered an Issue:</span>
-              </div>
-              <p className="text-[11px] font-mono pl-6 text-red-200">{errorMessage}</p>
-              <div className="pt-1 pl-6">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-xs text-red-700 text-left w-full">
+              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold">Setup Failed</p>
+                <p className="text-[11px] mt-0.5">{errorMessage}</p>
                 <button
+                  type="button"
                   onClick={handleStartDownload}
-                  className="px-3 py-1 bg-red-900/60 hover:bg-red-800 text-red-100 rounded text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="mt-2 text-[11px] font-medium text-emerald-700 hover:underline flex items-center gap-1"
                 >
                   <RefreshCw className="w-3 h-3" />
                   <span>Retry Download</span>
@@ -207,12 +202,6 @@ export const BackendSetupModal: React.FC<BackendSetupModalProps> = ({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-3 px-5 border-t border-[#27272a] bg-[#0f1012] flex items-center justify-between text-[11px] font-mono text-zinc-500">
-          <span>Source: GitHub Releases v1.0.0</span>
-          <span>Saved to %APPDATA%\PixCutBg</span>
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
 version: 1.0.0
 files:
-  - url: PixCutBg-Desktop-Setup-1.0.0.exe
-    sha512: XUHBOEBSU//Z0Jn2NKoewrDd8RA1ZgCv4iWsntHv1BJGofwGuWEYQSjjXgmBvuKq0ISsQzQzqYGsFw2MCjNziA==
-    size: 386744020
-path: PixCutBg-Desktop-Setup-1.0.0.exe
-sha512: XUHBOEBSU//Z0Jn2NKoewrDd8RA1ZgCv4iWsntHv1BJGofwGuWEYQSjjXgmBvuKq0ISsQzQzqYGsFw2MCjNziA==
-releaseDate: '2026-10-22T08:11:05.876Z'
+  - url: FileWala-TOOL-Setup-1.0.0.exe
+    sha512: EVrdShpMglz6fHYV3CX1XpuzVAMbBlmsEWdZkIj407FHqOcJinOdZ1eW/hw67hDyyv2+2pQbWhCYyRvK+VWLmQ==
+    size: 84369913
+path: FileWala-TOOL-Setup-1.0.0.exe
+sha512: EVrdShpMglz6fHYV3CX1XpuzVAMbBlmsEWdZkIj407FHqOcJinOdZ1eW/hw67hDyyv2+2pQbWhCYyRvK+VWLmQ==
+releaseDate: '2026-10-24T05:20:46.757Z'

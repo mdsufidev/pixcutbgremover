@@ -1,10 +1,39 @@
-export type ToolType = 'pan' | 'magic-erase' | 'brush-erase' | 'restore-brush' | 'crop';
+export type ToolMode = 'bg-remover' | 'enhancer';
+
+export type ToolType = 'pan' | 'magic-erase' | 'brush-erase' | 'restore-brush' | 'crop' | 'enhance';
 
 export type AspectRatioPreset = 'free' | '1:1' | '16:9' | '4:3' | '3:2' | '9:16' | '2:3';
 
 export type DevicePreference = 'auto' | 'gpu' | 'cpu';
 
 export type AIModelId = 'u2net' | 'u2netp' | 'silueta' | 'isnet-general-use';
+
+export interface EnhancerModelInfo {
+  id: string;
+  name: string;
+  tag: string;
+  description: string;
+  scales: number[];
+  default_scale: number;
+}
+
+export interface EnhancerStatus {
+  available: boolean;
+  engine: string;
+  binary_path?: string;
+  models_dir?: string;
+  supported_models: EnhancerModelInfo[];
+}
+
+export interface EnhanceResponse {
+  blob: Blob;
+  inferenceTimeMs: number;
+  width: number;
+  height: number;
+  scale: number;
+  model: string;
+  engine: string;
+}
 
 export interface AIModelInfo {
   id: AIModelId;
@@ -27,6 +56,8 @@ export interface CropRect {
 export interface HardwareInfo {
   accelerator: string;
   device_preference?: DevicePreference;
+  target_preference?: DevicePreference;
+  active_hardware_mode?: 'gpu' | 'cpu';
   model_loaded?: string;
   detected_gpu?: string | null;
   os: string;
@@ -35,6 +66,10 @@ export interface HardwareInfo {
   ram_total_gb: number;
   ram_available_gb: number;
   status: string;
+  is_ready?: boolean;
+  is_warming?: boolean;
+  is_switching?: boolean;
+  last_error?: string | null;
 }
 
 export interface EngineSettings {

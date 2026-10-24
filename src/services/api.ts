@@ -1,26 +1,22 @@
-import { HardwareInfo, DevicePreference, AIModelId, AIModelInfo, EngineSettings } from '../types';
+/**
+ * src/services/api.ts
+ * ====================
+ * High-Level Application Service Layer for PixCut AI Engine.
+ * Built on top of the centralized apiClient (fetchJson & postImageStream).
+ */
 
-let cachedDaemonBaseUrl: string | null = null;
+import {
+  HardwareInfo,
+  DevicePreference,
+  AIModelId,
+  AIModelInfo,
+  EngineSettings,
+  EnhancerStatus,
+  EnhanceResponse
+} from '../types';
+import { getDaemonBaseUrl, fetchJson, postImageStream, ImageStreamResult } from './apiClient';
 
-export async function getDaemonBaseUrl(): Promise<string> {
-  if (cachedDaemonBaseUrl) return cachedDaemonBaseUrl;
-  
-  if (window.electronAPI) {
-    try {
-      const url = await window.electronAPI.getDaemonUrl();
-      if (url) {
-        cachedDaemonBaseUrl = url;
-        return url;
-      }
-    } catch {
-      // fallback
-    }
-  }
-  
-  // Default fallback for standalone web dev preview
-  cachedDaemonBaseUrl = 'http://127.0.0.1:8765';
-  return cachedDaemonBaseUrl;
-}
+export { getDaemonBaseUrl };
 
 export interface RemoveBgResponse {
   blob: Blob;
@@ -31,9 +27,12 @@ export interface RemoveBgResponse {
   model: string;
 }
 
+/**
+ * Health check ping to daemon.
+ */
 export async function pingDaemon(): Promise<boolean> {
-  const baseUrl = await getDaemonBaseUrl();
   try {
+    const baseUrl = await getDaemonBaseUrl();
     const res = await fetch(`${baseUrl}/health`, { method: 'GET' });
     return res.ok;
   } catch {
@@ -41,141 +40,161 @@ export async function pingDaemon(): Promise<boolean> {
   }
 }
 
+/**
+ * Retrieves detected hardware acceleration and system resource specs.
+ */
 export async function getHardwareInfo(): Promise<HardwareInfo | null> {
-  const baseUrl = await getDaemonBaseUrl();
   try {
-    const res = await fetch(`${baseUrl}/api/hardware-info`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.success ? json.data : null;
+    return await fetchJson<HardwareInfo>('/api/hardware-info');
   } catch {
     return null;
   }
 }
 
+/**
+ * Lists available background removal models.
+ */
 export async function getAvailableModels(): Promise<AIModelInfo[]> {
-  const baseUrl = await getDaemonBaseUrl();
   try {
-    const res = await fetch(`${baseUrl}/api/models`);
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.success ? json.data : [];
+    return await fetchJson<AIModelInfo[]>('/api/models');
   } catch {
     return [];
   }
 }
 
+/**
+ * Triggers background model weight download.
+ */
 export async function downloadModel(modelId: AIModelId): Promise<boolean> {
-  const baseUrl = await getDaemonBaseUrl();
   try {
-    const res = await fetch(`${baseUrl}/api/models/download`, {
+    await fetchJson('/api/models/download', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model_id: modelId }),
     });
-    return res.ok;
+    return true;
   } catch {
     return false;
   }
 }
 
+/**
+ * Fetches persistent settings and synchronizes localStorage caches.
+ */
 export async function getEngineSettings(): Promise<EngineSettings | null> {
-  const baseUrl = await getDaemonBaseUrl();
   try {
-    const res = await fetch(`${baseUrl}/api/settings`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    if (json.success && json.data) {
-      if (json.data.device_preference) {
-        localStorage.setItem('pixcut_device_pref', json.data.device_preference);
+    const settings = await fetchJson<EngineSettings>('/api/settings');
+    if (settings) {
+      if (settings.device_preference) {
+        localStorage.setItem('pixcut_device_pref', settings.device_preference);
       }
-      if (json.data.model_preference) {
-        localStorage.setItem('pixcut_model_pref', json.data.model_preference);
+      if (settings.model_preference) {
+        localStorage.setItem('pixcut_model_pref', settings.model_preference);
       }
-      return json.data;
     }
-    return null;
+    return settings;
   } catch {
     return null;
   }
 }
 
+/**
+ * Saves permanent device & model preference in daemon config.json.
+ */
 export async function saveConfiguration(
   device: DevicePreference,
   model: AIModelId
 ): Promise<EngineSettings> {
-  const baseUrl = await getDaemonBaseUrl();
   localStorage.setItem('pixcut_device_pref', device);
   localStorage.setItem('pixcut_model_pref', model);
 
-  const res = await fetch(`${baseUrl}/api/settings`, {
+  return await fetchJson<EngineSettings>('/api/settings', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({
       device_preference: device,
       model_preference: model,
     }),
   });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Failed to update configuration: ${errText}`);
-  }
-
-  const json = await res.json();
-  if (!json.success) {
-    throw new Error(json.error || 'Failed to update configuration');
-  }
-
-  return json.data;
 }
 
+/**
+ * Convenience wrapper for device preference update.
+ */
 export async function saveDevicePreference(preference: DevicePreference): Promise<EngineSettings> {
   const model = (localStorage.getItem('pixcut_model_pref') as AIModelId) || 'u2net';
   return saveConfiguration(preference, model);
 }
 
+/**
+ * Processes high-performance local AI background removal.
+ */
 export async function processBackgroundRemoval(
   imageBlobOrFile: Blob | File,
   filename: string = 'image.png',
   alphaMatting: boolean = false
 ): Promise<RemoveBgResponse> {
-  const baseUrl = await getDaemonBaseUrl();
-  const formData = new FormData();
-  formData.append('file', imageBlobOrFile, filename);
-
-  const query = new URLSearchParams({
-    alpha_matting: alphaMatting ? 'true' : 'false',
-    fg_threshold: '240',
-    bg_threshold: '10',
-    erode_size: '10',
-  });
-
-  const response = await fetch(`${baseUrl}/api/remove-bg?${query.toString()}`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`AI Engine error: ${response.statusText} (${errText})`);
-  }
-
-  const resultBlob = await response.blob();
-  const inferenceTimeMs = parseFloat(response.headers.get('X-Inference-Time-Ms') || '0');
-  const width = parseInt(response.headers.get('X-Image-Width') || '0', 10);
-  const height = parseInt(response.headers.get('X-Image-Height') || '0', 10);
-  const device = response.headers.get('X-Device') || 'CPU';
-  const model = response.headers.get('X-Model') || 'u2net';
+  const result: ImageStreamResult = await postImageStream(
+    '/api/remove-bg',
+    imageBlobOrFile,
+    filename,
+    {
+      alpha_matting: alphaMatting,
+      fg_threshold: 240,
+      bg_threshold: 10,
+      erode_size: 10,
+    }
+  );
 
   return {
-    blob: resultBlob,
-    inferenceTimeMs,
-    width,
-    height,
-    device,
-    model,
+    blob: result.blob,
+    inferenceTimeMs: result.inferenceTimeMs,
+    width: result.width,
+    height: result.height,
+    device: result.device,
+    model: result.model || 'u2net',
+  };
+}
+
+/**
+ * Checks Real-ESRGAN / Vulkan enhancer availability and status.
+ */
+export async function getEnhancerStatus(): Promise<EnhancerStatus | null> {
+  try {
+    return await fetchJson<EnhancerStatus>('/api/enhancer/status');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Processes Real-ESRGAN + CodeFormer hybrid image enhancement.
+ */
+export async function processImageEnhance(
+  imageBlobOrFile: Blob | File,
+  filename: string = 'image.png',
+  scale: number = 1,
+  model: string = 'realesr-animevideov3',
+  tile: number = 0
+): Promise<EnhanceResponse> {
+  const safeScale = [1, 2, 3, 4].includes(scale) ? scale : 1;
+
+  const result: ImageStreamResult = await postImageStream(
+    '/api/enhance',
+    imageBlobOrFile,
+    filename,
+    {
+      scale: safeScale,
+      model: model || 'realesr-animevideov3',
+      tile: tile,
+    }
+  );
+
+  return {
+    blob: result.blob,
+    inferenceTimeMs: result.inferenceTimeMs,
+    width: result.width,
+    height: result.height,
+    scale: result.scale || safeScale,
+    model: result.model || model,
+    engine: result.engine || 'Real-ESRGAN (NCNN/Vulkan)',
   };
 }
